@@ -190,7 +190,7 @@ export const SchedulePage: React.FC = () => {
               <div className="flex items-center justify-center mb-2">
                 <Phone className="h-5 w-5 text-[#E3A872] mr-2" />
                 <span className="text-gray-700">
-                  Contato do Barbeiro: (11) 95234-3456
+                  Contato do Barbeiro: (86) 99940-9360
                 </span>
               </div>
             </div>
@@ -200,11 +200,11 @@ export const SchedulePage: React.FC = () => {
                 <div className="flex items-center mb-2">
                   <MapPin className="h-5 w-5 text-[#E3A872] mr-2" />
                   <span className="text-gray-700">
-                    Rua Exemplo, 123 - São Paulo, SP
+                    Rua Pirangi, 1548 - Teresina, Pi
                   </span>
                 </div>
                 <Button
-                  onClick={() => window.open('https://maps.google.com/?q=Rua+Exemplo+123+São+Paulo+SP', '_blank')}
+                  onClick={() => window.open('https://maps.app.goo.gl/QmpM6serdf8M4Dr46')}
                   variant="outline"
                   className="mt-2 border-[#E3A872] text-[#E3A872] hover:bg-[#E3A872] hover:text-white"
                 >
