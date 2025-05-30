@@ -1,4 +1,4 @@
-import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation, Link, Outlet } from 'react-router-dom';
 import { Calendar, UserCircle, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useState } from 'react';
@@ -21,9 +21,12 @@ export const Layout = () => {
       <header className="bg-[#E3A872] shadow-lg relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 justify-between items-center">
-            <Link to={isAuthenticated ? '/schedule' : '/login'} className="flex items-center">
-              <Calendar className="h-8 w-8 text-white" />
-              <span className="ml-2 text-xl font-semibold text-white">StudioIvoSantos</span>
+            <Link to={isAuthenticated ? '/schedule' : '/login'} className="flex flex-col items-start">
+              <div className="flex items-center">
+                <Calendar className="h-8 w-8 text-white" />
+                <span className="ml-2 text-xl font-semibold text-white">Studio Ivo Santos</span>
+              </div>
+              <span className="text-sm text-white/80 ml-10">Agende aqui</span>
             </Link>
             
             <div className="sm:hidden">
@@ -99,7 +102,7 @@ export const Layout = () => {
           <img
             src="/images/WhatsApp Image 2025-05-12 at 14.01.53.jpeg"
             alt="Background"
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover object-[center_15%]"
           />
           <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px]"></div>
         </div>
@@ -111,7 +114,7 @@ export const Layout = () => {
       <footer className="bg-[#E3A872] py-4 mt-auto relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-center text-sm text-white">
-            © {new Date().getFullYear()} StudioIvoSantos. All rights reserved.
+            © {new Date().getFullYear()} Studio Ivo Santos. All rights reserved.
           </p>
         </div>
       </footer>
