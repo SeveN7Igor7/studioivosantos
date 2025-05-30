@@ -47,6 +47,7 @@ export const AdminPage: React.FC = () => {
   const [disabledDays, setDisabledDays] = useState<string[]>([]);
   const [dailyProfit, setDailyProfit] = useState(0);
   const [monthlyProfit, setMonthlyProfit] = useState(0);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [editForm, setEditForm] = useState<Appointment>({
     dia: format(new Date(), 'dd/MM/yyyy'),
     horario: '',
@@ -75,7 +76,6 @@ export const AdminPage: React.FC = () => {
 
         const allAppointments: Appointment[] = [];
         
-        // Active appointments
         if (appointmentsSnap.exists()) {
           Object.entries(appointmentsSnap.val()).forEach(([id, appointment]: [string, any]) => {
             allAppointments.push({
@@ -86,7 +86,6 @@ export const AdminPage: React.FC = () => {
           });
         }
 
-        // Completed appointments
         if (completedSnap.exists()) {
           Object.entries(completedSnap.val()).forEach(([id, appointment]: [string, any]) => {
             allAppointments.push({
@@ -97,7 +96,6 @@ export const AdminPage: React.FC = () => {
           });
         }
 
-        // Cancelled appointments
         if (cancelledSnap.exists()) {
           Object.entries(cancelledSnap.val()).forEach(([id, appointment]: [string, any]) => {
             allAppointments.push({
@@ -116,7 +114,6 @@ export const AdminPage: React.FC = () => {
         
         setAppointments(allAppointments);
 
-        // Calculate daily profit
         const selectedDateStr = format(selectedDate, 'dd/MM/yyyy');
         const completedToday = allAppointments.filter(
           app => app.status === 'completed' && app.dia === selectedDateStr
@@ -129,7 +126,6 @@ export const AdminPage: React.FC = () => {
             if (typeof price === 'number') {
               return acc + price;
             }
-            // For services with sizes, use the medium price as default
             if (typeof price === 'object') {
               return acc + price.m;
             }
@@ -140,7 +136,6 @@ export const AdminPage: React.FC = () => {
 
         setDailyProfit(dailyProfit);
 
-        // Calculate monthly profit
         const now = new Date();
         const monthStart = startOfMonth(now);
         const monthEnd = endOfMonth(now);
@@ -252,6 +247,7 @@ export const AdminPage: React.FC = () => {
   const handleEdit = (appointment: Appointment) => {
     setIsEditing(appointment.id);
     setEditForm(appointment);
+    setSelectedServices(appointment.servico.split(', '));
   };
 
   const handleSave = async () => {
@@ -279,6 +275,7 @@ export const AdminPage: React.FC = () => {
       
       setIsEditing(null);
       setIsAdding(false);
+      setSelectedServices([]);
       setEditForm({
         dia: format(selectedDate, 'dd/MM/yyyy'),
         horario: '',
@@ -301,16 +298,26 @@ export const AdminPage: React.FC = () => {
     }));
   };
 
+  const handleServiceSelection = (service: string) => {
+    setSelectedServices(prev => {
+      if (prev.includes(service)) {
+        return prev.filter(s => s !== service);
+      }
+      return [...prev, service];
+    });
+    setEditForm(prev => ({
+      ...prev,
+      servico: selectedServices.includes(service) 
+        ? selectedServices.filter(s => s !== service).join(', ')
+        : [...selectedServices, service].join(', ')
+    }));
+  };
+
   const filteredAppointments = appointments.filter(app => {
     const matchesSearch = app.userName.toLowerCase().includes(searchTerm.toLowerCase());
     const appDate = parse(app.dia, 'dd/MM/yyyy', new Date());
     return matchesSearch && format(appDate, 'dd/MM/yyyy') === format(selectedDate, 'dd/MM/yyyy');
   });
-
-  const timeSlots = [
-    '08:00', '09:00', '10:00', '11:00', '12:00', '13:00',
-    '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
-  ];
 
   const timeSlotMap: { [key: string]: string } = {
     '1': '08:00',
@@ -325,6 +332,9 @@ export const AdminPage: React.FC = () => {
     '10': '17:00',
     '11': '18:00',
     '12': '19:00',
+    '13': '20:00',
+    '14': '21:00',
+    '15': '22:00',
   };
 
   const services = [
@@ -482,16 +492,16 @@ export const AdminPage: React.FC = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Serviço
+                    Serviços
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {services.map((service) => (
                       <button
                         key={service}
-                        onClick={() => setEditForm({...editForm, servico: service})}
+                        onClick={() => handleServiceSelection(service)}
                         className={`
                           p-2 rounded-md text-sm font-medium
-                          ${editForm.servico === service
+                          ${selectedServices.includes(service)
                             ? 'bg-[#E3A872] text-white'
                             : 'bg-white border border-[#E8D5C4] text-gray-700 hover:bg-[#FDF8F3]'
                           }
@@ -507,9 +517,9 @@ export const AdminPage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Horário
                   </label>
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                     {Object.entries(timeSlotMap).map(([id, time]) => {
-                      const isBooked = bookedTimeSlots.includes(id);
+                      const isBooked = bookedTimeSlots.includes(id) && editForm.horario !== time;
                       return (
                         <button
                           key={id}
@@ -536,7 +546,10 @@ export const AdminPage: React.FC = () => {
               <div className="mt-6 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
                 <Button
                   variant="outline"
-                  onClick={() => setIsAdding(false)}
+                  onClick={() => {
+                    setIsAdding(false);
+                    setSelectedServices([]);
+                  }}
                   className="w-full sm:w-auto border-[#E3A872] text-[#E3A872] hover:bg-[#FDF8F3]"
                 >
                   <X className="h-4 w-4 mr-2" />
@@ -568,28 +581,82 @@ export const AdminPage: React.FC = () => {
                   <div className="p-5">
                     <div className="space-y-4">
                       <Input
-                        label="Data"
-                        value={editForm.dia}
-                        onChange={(e) => setEditForm({...editForm, dia: e.target.value})}
+                        label="Nome do Cliente"
+                        value={editForm.userName}
+                        onChange={(e) => setEditForm({...editForm, userName: e.target.value})}
                         fullWidth
                       />
                       <Input
-                        label="Horário"
-                        value={editForm.horario}
-                        onChange={(e) => setEditForm({...editForm, horario: e.target.value})}
+                        label="Telefone"
+                        value={editForm.userPhone}
+                        onChange={(e) => {
+                          let value = e.target.value.replace(/\D/g, '');
+                          if (value.length <= 11) {
+                            value = value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
+                            setEditForm({...editForm, userPhone: value});
+                          }
+                        }}
+                        placeholder="(99) 99999-9999"
                         fullWidth
                       />
-                      <Input
-                        label="Serviço"
-                        value={editForm.servico}
-                        onChange={(e) => setEditForm({...editForm, servico: e.target.value})}
-                        fullWidth
-                      />
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Serviços
+                        </label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {services.map((service) => (
+                            <button
+                              key={service}
+                              onClick={() => handleServiceSelection(service)}
+                              className={`
+                                p-2 rounded-md text-sm font-medium
+                                ${selectedServices.includes(service)
+                                  ? 'bg-[#E3A872] text-white'
+                                  : 'bg-white border border-[#E8D5C4] text-gray-700 hover:bg-[#FDF8F3]'
+                                }
+                              `}
+                            >
+                              {service}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Horário
+                        </label>
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                          {Object.entries(timeSlotMap).map(([id, time]) => {
+                            const isBooked = bookedTimeSlots.includes(id) && editForm.horario !== time;
+                            return (
+                              <button
+                                key={id}
+                                onClick={() => !isBooked && setEditForm({...editForm, horario: time})}
+                                disabled={isBooked}
+                                className={`
+                                  p-2 rounded-md text-sm font-medium
+                                  ${editForm.horario === time
+                                    ? 'bg-[#E3A872] text-white'
+                                    : isBooked
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                                    : 'bg-white border border-[#E8D5C4] text-gray-700 hover:bg-[#FDF8F3]'
+                                  }
+                                `}
+                              >
+                                {time}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                     <div className="mt-4 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
                       <Button
                         variant="outline"
-                        onClick={() => setIsEditing(null)}
+                        onClick={() => {
+                          setIsEditing(null);
+                          setSelectedServices([]);
+                        }}
                         className="w-full sm:w-auto border-[#E3A872] text-[#E3A872] hover:bg-[#FDF8F3]"
                       >
                         <X className="h-4 w-4 mr-2" />
