@@ -37,6 +37,32 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
   const [isEditMode, setIsEditMode] = useState(false);
   const [dayAppointments, setDayAppointments] = useState<DayAppointments>({});
 
+  const toggleDateOff = async (date: Date) => {
+    try {
+      const formattedDate = format(date, 'dd-MM-yyyy');
+      const dateRef = ref(db, `diasdesativados/${formattedDate}`);
+      
+      if (disabledDays[formattedDate]?.blocked) {
+        // If the date is currently blocked, remove it
+        await remove(dateRef);
+        setDisabledDays(prev => {
+          const newDisabledDays = { ...prev };
+          delete newDisabledDays[formattedDate];
+          return newDisabledDays;
+        });
+      } else {
+        // If the date is not blocked, block it
+        await set(dateRef, { blocked: true });
+        setDisabledDays(prev => ({
+          ...prev,
+          [formattedDate]: { blocked: true }
+        }));
+      }
+    } catch (error) {
+      console.error('Error toggling date:', error);
+    }
+  };
+
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
