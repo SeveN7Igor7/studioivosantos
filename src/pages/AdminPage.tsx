@@ -47,7 +47,6 @@ export const AdminPage: React.FC = () => {
   const [disabledDays, setDisabledDays] = useState<string[]>([]);
   const [dailyProfit, setDailyProfit] = useState(0);
   const [monthlyProfit, setMonthlyProfit] = useState(0);
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [editForm, setEditForm] = useState<Appointment>({
     dia: format(new Date(), 'dd/MM/yyyy'),
     horario: '',
@@ -76,6 +75,7 @@ export const AdminPage: React.FC = () => {
 
         const allAppointments: Appointment[] = [];
         
+        // Active appointments
         if (appointmentsSnap.exists()) {
           Object.entries(appointmentsSnap.val()).forEach(([id, appointment]: [string, any]) => {
             allAppointments.push({
@@ -86,6 +86,7 @@ export const AdminPage: React.FC = () => {
           });
         }
 
+        // Completed appointments
         if (completedSnap.exists()) {
           Object.entries(completedSnap.val()).forEach(([id, appointment]: [string, any]) => {
             allAppointments.push({
@@ -96,6 +97,7 @@ export const AdminPage: React.FC = () => {
           });
         }
 
+        // Cancelled appointments
         if (cancelledSnap.exists()) {
           Object.entries(cancelledSnap.val()).forEach(([id, appointment]: [string, any]) => {
             allAppointments.push({
@@ -114,6 +116,7 @@ export const AdminPage: React.FC = () => {
         
         setAppointments(allAppointments);
 
+        // Calculate daily profit
         const selectedDateStr = format(selectedDate, 'dd/MM/yyyy');
         const completedToday = allAppointments.filter(
           app => app.status === 'completed' && app.dia === selectedDateStr
@@ -126,6 +129,7 @@ export const AdminPage: React.FC = () => {
             if (typeof price === 'number') {
               return acc + price;
             }
+            // For services with sizes, use the medium price as default
             if (typeof price === 'object') {
               return acc + price.m;
             }
@@ -136,6 +140,7 @@ export const AdminPage: React.FC = () => {
 
         setDailyProfit(dailyProfit);
 
+        // Calculate monthly profit
         const now = new Date();
         const monthStart = startOfMonth(now);
         const monthEnd = endOfMonth(now);
@@ -176,8 +181,7 @@ export const AdminPage: React.FC = () => {
         if (appointmentsSnap.exists()) {
           Object.values(appointmentsSnap.val()).forEach((app: any) => {
             if (app.dia === selectedDateStr) {
-              const timeSlot = Object.entries(timeSlotMap).find(([_, time]) => time === app.horario)?.[0];
-              if (timeSlot) bookedSlots.add(timeSlot);
+              bookedSlots.add(app.horario);
             }
           });
         }
@@ -247,12 +251,43 @@ export const AdminPage: React.FC = () => {
   const handleEdit = (appointment: Appointment) => {
     setIsEditing(appointment.id);
     setEditForm(appointment);
-    setSelectedServices(appointment.servico.split(', '));
+  };
+
+  const validateTimeFormat = (time: string) => {
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    return timeRegex.test(time);
+  };
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    // Only allow numbers and colon
+    value = value.replace(/[^\d:]/g, '');
+    
+    // Auto-add colon after 2 digits if not present
+    if (value.length === 2 && !value.includes(':')) {
+      value += ':';
+    }
+    
+    // Limit to 5 characters (HH:MM)
+    if (value.length <= 5) {
+      setEditForm({...editForm, horario: value});
+    }
   };
 
   const handleSave = async () => {
     if (!editForm.dia || !editForm.horario || !editForm.userName || !editForm.servico) {
       alert('Por favor, preencha todos os campos obrigatórios');
+      return;
+    }
+
+    if (!validateTimeFormat(editForm.horario)) {
+      alert('Por favor, insira um horário válido no formato HH:MM');
+      return;
+    }
+
+    const [hours, minutes] = editForm.horario.split(':').map(Number);
+    if (hours < 8 || hours > 22 || (hours === 22 && minutes > 0)) {
+      alert('O horário deve estar entre 08:00 e 22:00');
       return;
     }
 
@@ -275,7 +310,6 @@ export const AdminPage: React.FC = () => {
       
       setIsEditing(null);
       setIsAdding(false);
-      setSelectedServices([]);
       setEditForm({
         dia: format(selectedDate, 'dd/MM/yyyy'),
         horario: '',
@@ -298,44 +332,11 @@ export const AdminPage: React.FC = () => {
     }));
   };
 
-  const handleServiceSelection = (service: string) => {
-    setSelectedServices(prev => {
-      if (prev.includes(service)) {
-        return prev.filter(s => s !== service);
-      }
-      return [...prev, service];
-    });
-    setEditForm(prev => ({
-      ...prev,
-      servico: selectedServices.includes(service) 
-        ? selectedServices.filter(s => s !== service).join(', ')
-        : [...selectedServices, service].join(', ')
-    }));
-  };
-
   const filteredAppointments = appointments.filter(app => {
     const matchesSearch = app.userName.toLowerCase().includes(searchTerm.toLowerCase());
     const appDate = parse(app.dia, 'dd/MM/yyyy', new Date());
     return matchesSearch && format(appDate, 'dd/MM/yyyy') === format(selectedDate, 'dd/MM/yyyy');
   });
-
-  const timeSlotMap: { [key: string]: string } = {
-    '1': '08:00',
-    '2': '09:00',
-    '3': '10:00',
-    '4': '11:00',
-    '5': '12:00',
-    '6': '13:00',
-    '7': '14:00',
-    '8': '15:00',
-    '9': '16:00',
-    '10': '17:00',
-    '11': '18:00',
-    '12': '19:00',
-    '13': '20:00',
-    '14': '21:00',
-    '15': '22:00',
-  };
 
   const services = [
     'Corte de Cabelo',
@@ -463,9 +464,11 @@ export const AdminPage: React.FC = () => {
             </div>
           </div>
 
-          {isAdding && (
+          {(isAdding || isEditing) && (
             <div className="mb-6 bg-white p-6 rounded-lg border border-[#E8D5C4]">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Novo Agendamento</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {isAdding ? 'Novo Agendamento' : 'Editar Agendamento'}
+              </h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
@@ -492,16 +495,16 @@ export const AdminPage: React.FC = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Serviços
+                    Serviço
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {services.map((service) => (
                       <button
                         key={service}
-                        onClick={() => handleServiceSelection(service)}
+                        onClick={() => setEditForm({...editForm, servico: service})}
                         className={`
                           p-2 rounded-md text-sm font-medium
-                          ${selectedServices.includes(service)
+                          ${editForm.servico === service
                             ? 'bg-[#E3A872] text-white'
                             : 'bg-white border border-[#E8D5C4] text-gray-700 hover:bg-[#FDF8F3]'
                           }
@@ -515,31 +518,14 @@ export const AdminPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Horário
+                    Horário (08:00 - 22:00)
                   </label>
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {Object.entries(timeSlotMap).map(([id, time]) => {
-                      const isBooked = bookedTimeSlots.includes(id) && editForm.horario !== time;
-                      return (
-                        <button
-                          key={id}
-                          onClick={() => !isBooked && setEditForm({...editForm, horario: time})}
-                          disabled={isBooked}
-                          className={`
-                            p-2 rounded-md text-sm font-medium
-                            ${editForm.horario === time
-                              ? 'bg-[#E3A872] text-white'
-                              : isBooked
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                              : 'bg-white border border-[#E8D5C4] text-gray-700 hover:bg-[#FDF8F3]'
-                            }
-                          `}
-                        >
-                          {time}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <Input
+                    value={editForm.horario}
+                    onChange={handleTimeChange}
+                    placeholder="HH:MM"
+                    className="w-32"
+                  />
                 </div>
               </div>
               
@@ -547,8 +533,8 @@ export const AdminPage: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={() => {
+                    setIsEditing(null);
                     setIsAdding(false);
-                    setSelectedServices([]);
                   }}
                   className="w-full sm:w-auto border-[#E3A872] text-[#E3A872] hover:bg-[#FDF8F3]"
                 >
@@ -577,209 +563,113 @@ export const AdminPage: React.FC = () => {
                     'border-[#E8D5C4]'}
                 `}
               >
-                {isEditing === appointment.id ? (
-                  <div className="p-5">
-                    <div className="space-y-4">
-                      <Input
-                        label="Nome do Cliente"
-                        value={editForm.userName}
-                        onChange={(e) => setEditForm({...editForm, userName: e.target.value})}
-                        fullWidth
-                      />
-                      <Input
-                        label="Telefone"
-                        value={editForm.userPhone}
-                        onChange={(e) => {
-                          let value = e.target.value.replace(/\D/g, '');
-                          if (value.length <= 11) {
-                            value = value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
-                            setEditForm({...editForm, userPhone: value});
-                          }
-                        }}
-                        placeholder="(99) 99999-9999"
-                        fullWidth
-                      />
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Serviços
-                        </label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {services.map((service) => (
-                            <button
-                              key={service}
-                              onClick={() => handleServiceSelection(service)}
-                              className={`
-                                p-2 rounded-md text-sm font-medium
-                                ${selectedServices.includes(service)
-                                  ? 'bg-[#E3A872] text-white'
-                                  : 'bg-white border border-[#E8D5C4] text-gray-700 hover:bg-[#FDF8F3]'
-                                }
-                              `}
-                            >
-                              {service}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Horário
-                        </label>
-                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                          {Object.entries(timeSlotMap).map(([id, time]) => {
-                            const isBooked = bookedTimeSlots.includes(id) && editForm.horario !== time;
-                            return (
-                              <button
-                                key={id}
-                                onClick={() => !isBooked && setEditForm({...editForm, horario: time})}
-                                disabled={isBooked}
-                                className={`
-                                  p-2 rounded-md text-sm font-medium
-                                  ${editForm.horario === time
-                                    ? 'bg-[#E3A872] text-white'
-                                    : isBooked
-                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                                    : 'bg-white border border-[#E8D5C4] text-gray-700 hover:bg-[#FDF8F3]'
-                                  }
-                                `}
-                              >
-                                {time}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
+                <div className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-2">
+                      <CalendarIcon className={`h-5 w-5 ${
+                        appointment.status === 'completed' ? 'text-green-600' :
+                        appointment.status === 'cancelled' ? 'text-red-600' :
+                        'text-[#E3A872]'
+                      }`} />
+                      <span className="font-medium text-gray-900">{appointment.dia}</span>
                     </div>
+                    <div className="flex items-center space-x-2">
+                      <Clock className={`h-5 w-5 ${
+                        appointment.status === 'completed' ? 'text-green-600' :
+                        appointment.status === 'cancelled' ? 'text-red-600' :
+                        'text-[#E3A872]'
+                      }`} />
+                      <span className="font-medium text-gray-900">{appointment.horario}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <User className={`h-5 w-5 ${
+                        appointment.status === 'completed' ? 'text-green-600' :
+                        appointment.status === 'cancelled' ? 'text-red-600' :
+                        'text-[#E3A872]'
+                      }`} />
+                      <span className="text-gray-900">{appointment.userName}</span>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Scissors className={`h-5 w-5 ${
+                        appointment.status === 'completed' ? 'text-green-600' :
+                        appointment.status === 'cancelled' ? 'text-red-600' :
+                        'text-[#E3A872]'
+                      }`} />
+                      <span className="text-gray-900">{appointment.servico}</span>
+                    </div>
+
+                    {appointment.userPhone && (
+                      <div className="flex items-center space-x-2">
+                        <Phone className={`h-5 w-5 ${
+                          appointment.status === 'completed' ? 'text-green-600' :
+                          appointment.status === 'cancelled' ? 'text-red-600' :
+                          'text-[#E3A872]'
+                        }`} />
+                        <span className="text-gray-900">
+                          {appointment.userPhone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')}
+                        </span>
+                      </div>
+                    )}
+
+                    {appointment.userEmail && (
+                      <div className="flex items-center space-x-2">
+                        <Mail className={`h-5 w-5 ${
+                          appointment.status === 'completed' ? 'text-green-600' :
+                          appointment.status === 'cancelled' ? 'text-red-600' :
+                          'text-[#E3A872]'
+                        }`} />
+                        <span className="text-gray-900">{appointment.userEmail}</span>
+                      </div>
+                    )}
+
+                    {appointment.status && (
+                      <div className={`mt-2 text-sm font-medium ${
+                        appointment.status === 'completed' ? 'text-green-600' :
+                        appointment.status === 'cancelled' ? 'text-red-600' :
+                        'text-[#E3A872]'
+                      }`}>
+                        Status: {
+                          appointment.status === 'completed' ? 'Finalizado' :
+                          appointment.status === 'cancelled' ? 'Cancelado' :
+                          'Ativo'
+                        }
+                      </div>
+                    )}
+                  </div>
+
+                  {appointment.status === 'active' && (
                     <div className="mt-4 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
                       <Button
                         variant="outline"
-                        onClick={() => {
-                          setIsEditing(null);
-                          setSelectedServices([]);
-                        }}
-                        className="w-full sm:w-auto border-[#E3A872] text-[#E3A872] hover:bg-[#FDF8F3]"
+                        onClick={() => handleComplete(appointment)}
+                        className="w-full sm:w-auto text-green-600 hover:bg-green-50 border-green-600"
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Finalizado
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleDelete(appointment)}
+                        className="w-full sm:w-auto text-red-600 hover:bg-red-50 border-red-600"
                       >
                         <X className="h-4 w-4 mr-2" />
                         Cancelar
                       </Button>
                       <Button
-                        onClick={handleSave}
-                        className="w-full sm:w-auto bg-[#E3A872] hover:bg-[#D89860]"
+                        variant="outline"
+                        onClick={() => handleEdit(appointment)}
+                        className="w-full sm:w-auto border-[#E3A872] text-[#E3A872] hover:bg-[#FDF8F3]"
                       >
-                        <Check className="h-4 w-4 mr-2" />
-                        Salvar
+                        <Edit2 className="h-4 w-4 mr-2" />
+                        Editar
                       </Button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="p-5">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-2">
-                        <CalendarIcon className={`h-5 w-5 ${
-                          appointment.status === 'completed' ? 'text-green-600' :
-                          appointment.status === 'cancelled' ? 'text-red-600' :
-                          'text-[#E3A872]'
-                        }`} />
-                        <span className="font-medium text-gray-900">{appointment.dia}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Clock className={`h-5 w-5 ${
-                          appointment.status === 'completed' ? 'text-green-600' :
-                          appointment.status === 'cancelled' ? 'text-red-600' :
-                          'text-[#E3A872]'
-                        }`} />
-                        <span className="font-medium text-gray-900">{appointment.horario}</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <User className={`h-5 w-5 ${
-                          appointment.status === 'completed' ? 'text-green-600' :
-                          appointment.status === 'cancelled' ? 'text-red-600' :
-                          'text-[#E3A872]'
-                        }`} />
-                        <span className="text-gray-900">{appointment.userName}</span>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Scissors className={`h-5 w-5 ${
-                          appointment.status === 'completed' ? 'text-green-600' :
-                          appointment.status === 'cancelled' ? 'text-red-600' :
-                          'text-[#E3A872]'
-                        }`} />
-                        <span className="text-gray-900">{appointment.servico}</span>
-                      </div>
-
-                      {appointment.userPhone && (
-                        <div className="flex items-center space-x-2">
-                          <Phone className={`h-5 w-5 ${
-                            appointment.status === 'completed' ? 'text-green-600' :
-                            appointment.status === 'cancelled' ? 'text-red-600' :
-                            'text-[#E3A872]'
-                          }`} />
-                          <span className="text-gray-900">
-                            {appointment.userPhone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')}
-                          </span>
-                        </div>
-                      )}
-
-                      {appointment.userEmail && (
-                        <div className="flex items-center space-x-2">
-                          <Mail className={`h-5 w-5 ${
-                            appointment.status === 'completed' ? 'text-green-600' :
-                            appointment.status === 'cancelled' ? 'text-red-600' :
-                            'text-[#E3A872]'
-                          }`} />
-                          <span className="text-gray-900">{appointment.userEmail}</span>
-                        </div>
-                      )}
-
-                      {appointment.status && (
-                        <div className={`mt-2 text-sm font-medium ${
-                          appointment.status === 'completed' ? 'text-green-600' :
-                          appointment.status === 'cancelled' ? 'text-red-600' :
-                          'text-[#E3A872]'
-                        }`}>
-                          Status: {
-                            appointment.status === 'completed' ? 'Finalizado' :
-                            appointment.status === 'cancelled' ? 'Cancelado' :
-                            'Ativo'
-                          }
-                        </div>
-                      )}
-                    </div>
-
-                    {appointment.status === 'active' && (
-                      <div className="mt-4 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => handleComplete(appointment)}
-                          className="w-full sm:w-auto text-green-600 hover:bg-green-50 border-green-600"
-                        >
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Finalizado
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => handleDelete(appointment)}
-                          className="w-full sm:w-auto text-red-600 hover:bg-red-50 border-red-600"
-                        >
-                          <X className="h-4 w-4 mr-2" />
-                          Cancelar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => handleEdit(appointment)}
-                          className="w-full sm:w-auto border-[#E3A872] text-[#E3A872] hover:bg-[#FDF8F3]"
-                        >
-                          <Edit2 className="h-4 w-4 mr-2" />
-                          Editar
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ))}
           </div>
