@@ -379,6 +379,16 @@ export const AdminPage: React.FC = () => {
     const matchesSearch = app.userName.toLowerCase().includes(searchTerm.toLowerCase());
     const appDate = parse(app.dia, 'dd/MM/yyyy', new Date());
     return matchesSearch && format(appDate, 'dd/MM/yyyy') === format(selectedDate, 'dd/MM/yyyy');
+  }).sort((a, b) => {
+    // Sort by time (horario) in ascending order
+    const timeA = a.horario.split(':').map(Number);
+    const timeB = b.horario.split(':').map(Number);
+    
+    // Convert to minutes for easy comparison
+    const minutesA = timeA[0] * 60 + timeA[1];
+    const minutesB = timeB[0] * 60 + timeB[1];
+    
+    return minutesA - minutesB;
   });
 
   const services = [
