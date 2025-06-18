@@ -50,21 +50,21 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full relative">
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md">
-          <div className="bg-white/30 backdrop-blur-md py-8 px-4 shadow-2xl rounded-[2rem] sm:px-10">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md mb-6">
-              <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
+    <div className="min-h-screen-mobile w-full relative">
+      <div className="relative z-10 min-h-screen-mobile flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full max-w-sm sm:max-w-md">
+          <div className="bg-white/30 backdrop-blur-md py-6 sm:py-8 px-4 sm:px-6 md:px-10 shadow-2xl rounded-2xl sm:rounded-3xl">
+            <div className="mb-6 sm:mb-8">
+              <h2 className="text-center text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900">
                 Entre na sua conta
               </h2>
             </div>
             
             {error && (
-              <div className="rounded-2xl bg-red-50 p-4 mb-4">
+              <div className="rounded-xl sm:rounded-2xl bg-red-50 p-3 sm:p-4 mb-4 sm:mb-6">
                 <div className="flex">
                   <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">
+                    <h3 className="text-xs sm:text-sm font-medium text-red-800">
                       {error}
                     </h3>
                   </div>
@@ -72,7 +72,7 @@ export const LoginPage: React.FC = () => {
               </div>
             )}
             
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
               <div>
                 <Input
                   id="phone"
@@ -103,21 +103,21 @@ export const LoginPage: React.FC = () => {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                 <div className="flex items-center">
                   <input
                     id="remember-me"
                     name="remember-me"
                     type="checkbox"
-                    className="h-4 w-4 text-[#E3A872] focus:ring-[#E3A872] border-[#E8D5C4] rounded-xl"
+                    className="h-3 w-3 sm:h-4 sm:w-4 text-[#E3A872] focus:ring-[#E3A872] border-[#E8D5C4] rounded"
                   />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                  <label htmlFor="remember-me" className="ml-2 block text-xs sm:text-sm text-gray-900">
                     Lembrar-me
                   </label>
                 </div>
 
-                <div className="text-sm">
-                  <Link to="/forgot-password" className="font-medium text-[#E3A872] hover:text-[#D89860]">
+                <div className="text-xs sm:text-sm">
+                  <Link to="/forgot-password" className="font-medium text-[#E3A872] hover:text-[#D89860] transition-colors duration-200">
                     Esqueceu sua senha?
                   </Link>
                 </div>
@@ -129,19 +129,20 @@ export const LoginPage: React.FC = () => {
                   variant="primary"
                   fullWidth
                   isLoading={isLoading}
-                  className="bg-[#E3A872] hover:bg-[#D89860] rounded-2xl"
+                  size="md"
+                  className="bg-[#E3A872] hover:bg-[#D89860]"
                 >
                   Entrar
                 </Button>
               </div>
             </form>
 
-            <div className="mt-6 text-center">
-              <span className="text-sm text-gray-900">
+            <div className="mt-4 sm:mt-6 text-center">
+              <span className="text-xs sm:text-sm text-gray-900">
                 Não tem uma conta?{' '}
                 <Link
                   to="/register"
-                  className="font-medium text-[#E3A872] hover:text-[#D89860]"
+                  className="font-medium text-[#E3A872] hover:text-[#D89860] transition-colors duration-200"
                 >
                   Criar uma conta
                 </Link>
