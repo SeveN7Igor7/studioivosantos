@@ -140,8 +140,8 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
-  const calendarStart = startOfWeek(monthStart);
-  const calendarEnd = endOfWeek(monthEnd);
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 }); // Start on Sunday
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 }); // End on Saturday
 
   const calendarDays = eachDayOfInterval({
     start: calendarStart,
@@ -194,8 +194,8 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
 
         <CalendarHeader />
 
-        <div className="calendar-grid">
-          {calendarDays.map((day) => {
+        <div className="grid grid-cols-7 gap-1 sm:gap-2 md:gap-3">
+          {calendarDays.map((day, index) => {
             const formattedDate = format(day, 'dd/MM/yyyy');
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const isSelected = isSameDay(day, selectedDate);
@@ -209,7 +209,7 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
 
             return (
               <button
-                key={day.toString()}
+                key={`${day.toString()}-${index}`}
                 onClick={() => {
                   if (isAdmin && isEditMode) {
                     toggleDateOff(day);
@@ -220,6 +220,7 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
                 disabled={!isClickableInViewMode && !isClickableInEditMode}
                 className={`
                   ${isAdmin ? 'calendar-day-admin' : 'calendar-day'} relative
+                  ${isSelected ? 'selected' : ''}
                   ${isCurrentMonth ? isDisabled ? 'text-red-700' : 'text-gray-900' : 'text-gray-400'}
                   ${isSelected ? 'bg-[#E3A872] text-white' : ''}
                   ${!isSelected && (isClickableInViewMode || isClickableInEditMode) ? 'hover:bg-[#E3A872] hover:bg-opacity-10' : ''}
