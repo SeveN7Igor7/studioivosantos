@@ -140,7 +140,7 @@ export const ProfilePage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E3A872]"></div>
+        <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-[#E3A872]"></div>
       </div>
     );
   }
@@ -149,148 +149,146 @@ export const ProfilePage: React.FC = () => {
   const pastAppointments = appointments.filter(app => app.status === 'completed' || app.status === 'cancelled');
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="p-6 bg-gradient-to-r from-[#E3A872] to-[#D89860]">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-white/10 rounded-full">
-              <User className="h-8 w-8 text-white" />
+    <div className="container-responsive max-w-4xl mx-auto">
+      <div className="card-responsive overflow-hidden">
+        <div className="p-4 sm:p-6 bg-gradient-to-r from-[#E3A872] to-[#D89860] -m-4 sm:-m-6 mb-4 sm:mb-6">
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="p-2 sm:p-3 bg-white/10 rounded-full">
+              <User className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">{user?.name}</h1>
-              <p className="text-white/90">{user?.email}</p>
-              <p className="text-white/90">
+              <h1 className="text-lg sm:text-2xl font-bold text-white">{user?.name}</h1>
+              <p className="text-sm sm:text-base text-white/90">{user?.email}</p>
+              <p className="text-sm sm:text-base text-white/90">
                 {user?.phone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <div className="bg-[#FDF8F3] rounded-2xl p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="bg-[#FDF8F3] rounded-xl sm:rounded-2xl p-3 sm:p-4">
+            <div className="flex items-center mb-2">
+              <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-[#E3A872] mr-2" />
+              <span className="text-xs sm:text-sm text-gray-700 font-medium">
+                Contato do Barbeiro: (86) 99940-9360
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-[#FDF8F3] rounded-xl sm:rounded-2xl p-3 sm:p-4">
+            <div className="flex flex-col">
               <div className="flex items-center mb-2">
-                <Phone className="h-5 w-5 text-[#E3A872] mr-2" />
-                <span className="text-gray-700 font-medium">
-                  Contato do Barbeiro: (86) 99940-9360
+                <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-[#E3A872] mr-2" />
+                <span className="text-xs sm:text-sm text-gray-700 font-medium">
+                  Rua Pirangi, 1548 - Teresina, Pi
                 </span>
               </div>
+              <Button
+                onClick={() => window.open('https://maps.app.goo.gl/QmpM6serdf8M4Dr46')}
+                variant="outline"
+                size="sm"
+                className="mt-2 border-[#E3A872] text-[#E3A872] hover:bg-[#E3A872] hover:text-white"
+              >
+                <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                Ver no Maps
+              </Button>
             </div>
+          </div>
+        </div>
 
-            <div className="bg-[#FDF8F3] rounded-2xl p-4">
-              <div className="flex flex-col">
-                <div className="flex items-center mb-2">
-                  <MapPin className="h-5 w-5 text-[#E3A872] mr-2" />
-                  <span className="text-gray-700 font-medium">
-                    Rua Pirangi, 1548 - Teresina, Pi
-                  </span>
-                </div>
-                <Button
-                  onClick={() => window.open('https://maps.app.goo.gl/QmpM6serdf8M4Dr46')}
-                  variant="outline"
-                  size="sm"
-                  className="mt-2 border-[#E3A872] text-[#E3A872] hover:bg-[#E3A872] hover:text-white"
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
+            Agendamentos Pendentes
+          </h2>
+          
+          {pendingAppointments.length > 0 ? (
+            <div className="space-y-3 sm:space-y-4">
+              {pendingAppointments.map((appointment, index) => (
+                <div
+                  key={index}
+                  className="bg-white border border-[#E8D5C4] rounded-lg sm:rounded-xl p-3 sm:p-4 hover:shadow-md transition-shadow"
                 >
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Ver no Maps
-                </Button>
-              </div>
+                  <div className="space-y-2 sm:space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-[#E3A872]" />
+                        <span className="text-sm sm:text-base font-medium">{appointment.dia}</span>
+                        <Clock className="h-4 w-4 sm:h-5 sm:w-5 ml-2 text-[#E3A872]" />
+                        <span className="text-sm sm:text-base font-medium">{appointment.horario}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Scissors className="h-4 w-4 sm:h-5 sm:w-5 text-[#E3A872]" />
+                      <span className="text-sm sm:text-base">{appointment.servico}</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between border-t pt-2 sm:pt-3 mt-2 sm:mt-3">
+                      <span className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getStatusColor(appointment.status)} bg-[#FDF8F3]`}>
+                        {getStatusText(appointment.status)}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCancelAppointment(appointment)}
+                        className="text-red-600 hover:bg-red-50 border-red-600"
+                      >
+                        <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          ) : (
+            <p className="text-sm sm:text-base text-gray-500 text-center py-4">
+              Nenhum agendamento pendente
+            </p>
+          )}
+        </div>
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Agendamentos Pendentes
-            </h2>
-            
-            {pendingAppointments.length > 0 ? (
-              <div className="space-y-4">
-                {pendingAppointments.map((appointment, index) => (
-                  <div
-                    key={index}
-                    className="bg-white border border-[#E8D5C4] rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="h-5 w-5 text-[#E3A872]" />
-                          <span className="font-medium">{appointment.dia}</span>
-                          <Clock className="h-5 w-5 ml-2 text-[#E3A872]" />
-                          <span className="font-medium">{appointment.horario}</span>
-                        </div>
-                      </div>
-                      
+        <div>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
+            Histórico de Agendamentos
+          </h2>
+          {pastAppointments.length > 0 ? (
+            <div className="space-y-3 sm:space-y-4">
+              {pastAppointments.map((appointment, index) => (
+                <div
+                  key={index}
+                  className="bg-white border border-[#E8D5C4] rounded-lg sm:rounded-xl p-3 sm:p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="space-y-2 sm:space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center space-x-2">
-                        <Scissors className="h-5 w-5 text-[#E3A872]" />
-                        <span>{appointment.servico}</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between border-t pt-3 mt-3">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(appointment.status)} bg-[#FDF8F3]`}>
-                          {getStatusText(appointment.status)}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCancelAppointment(appointment)}
-                          className="text-red-600 hover:bg-red-50 border-red-600"
-                        >
-                          <X className="h-4 w-4 mr-2" />
-                          Cancelar
-                        </Button>
+                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-[#E3A872]" />
+                        <span className="text-sm sm:text-base font-medium">{appointment.dia}</span>
+                        <Clock className="h-4 w-4 sm:h-5 sm:w-5 ml-2 text-[#E3A872]" />
+                        <span className="text-sm sm:text-base font-medium">{appointment.horario}</span>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">
-                Nenhum agendamento pendente
-              </p>
-            )}
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Histórico de Agendamentos
-            </h2>
-            {pastAppointments.length > 0 ? (
-              <div className="space-y-4">
-                {pastAppointments.map((appointment, index) => (
-                  <div
-                    key={index}
-                    className="bg-white border border-[#E8D5C4] rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="h-5 w-5 text-[#E3A872]" />
-                          <span className="font-medium">{appointment.dia}</span>
-                          <Clock className="h-5 w-5 ml-2 text-[#E3A872]" />
-                          <span className="font-medium">{appointment.horario}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Scissors className="h-5 w-5 text-[#E3A872]" />
-                        <span>{appointment.servico}</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between border-t pt-3 mt-3">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(appointment.status)} bg-[#FDF8F3]`}>
-                          {getStatusText(appointment.status)}
-                        </span>
-                      </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Scissors className="h-4 w-4 sm:h-5 sm:w-5 text-[#E3A872]" />
+                      <span className="text-sm sm:text-base">{appointment.servico}</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between border-t pt-2 sm:pt-3 mt-2 sm:mt-3">
+                      <span className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getStatusColor(appointment.status)} bg-[#FDF8F3]`}>
+                        {getStatusText(appointment.status)}
+                      </span>
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">
-                Nenhum agendamento no histórico
-              </p>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm sm:text-base text-gray-500 text-center py-4">
+              Nenhum agendamento no histórico
+            </p>
+          )}
         </div>
       </div>
     </div>
