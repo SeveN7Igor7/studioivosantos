@@ -74,21 +74,21 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full relative">
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md">
-          <div className="bg-white/30 backdrop-blur-md py-8 px-4 shadow-2xl rounded-[2rem] sm:px-10">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md mb-6">
-              <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
+    <div className="min-h-screen-mobile w-full relative">
+      <div className="relative z-10 min-h-screen-mobile flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full max-w-sm sm:max-w-md">
+          <div className="bg-white/30 backdrop-blur-md py-6 sm:py-8 px-4 sm:px-6 md:px-10 shadow-2xl rounded-2xl sm:rounded-3xl">
+            <div className="mb-6 sm:mb-8">
+              <h2 className="text-center text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900">
                 Criar sua conta
               </h2>
             </div>
             
             {error && (
-              <div className="rounded-2xl bg-red-50 p-4 mb-4">
+              <div className="rounded-xl sm:rounded-2xl bg-red-50 p-3 sm:p-4 mb-4 sm:mb-6">
                 <div className="flex">
                   <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">
+                    <h3 className="text-xs sm:text-sm font-medium text-red-800">
                       {error}
                     </h3>
                   </div>
@@ -96,7 +96,7 @@ export const RegisterPage: React.FC = () => {
               </div>
             )}
             
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
               <div>
                 <Input
                   id="name"
@@ -178,19 +178,20 @@ export const RegisterPage: React.FC = () => {
                   variant="primary"
                   fullWidth
                   isLoading={isLoading}
-                  className="bg-[#E3A872] hover:bg-[#D89860] rounded-2xl"
+                  size="md"
+                  className="bg-[#E3A872] hover:bg-[#D89860]"
                 >
                   Criar conta
                 </Button>
               </div>
             </form>
 
-            <div className="mt-6 text-center">
-              <span className="text-sm text-gray-900">
+            <div className="mt-4 sm:mt-6 text-center">
+              <span className="text-xs sm:text-sm text-gray-900">
                 Já tem uma conta?{' '}
                 <Link
                   to="/login"
-                  className="font-medium text-[#E3A872] hover:text-[#D89860]"
+                  className="font-medium text-[#E3A872] hover:text-[#D89860] transition-colors duration-200"
                 >
                   Entrar
                 </Link>
