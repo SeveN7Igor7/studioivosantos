@@ -9,7 +9,8 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, fullWidth = false, className = '', ...props }, ref) => {
     const inputClasses = `
-      block rounded-2xl border-2 shadow-sm px-4 py-3 w-full
+      block rounded-xl sm:rounded-2xl border-2 shadow-sm px-3 py-2 sm:px-4 sm:py-3 w-full
+      text-sm sm:text-base
       transition-all duration-200 ease-in-out
       bg-white/50 backdrop-blur-sm
       focus:ring-2 focus:ring-offset-0 focus:outline-none
@@ -22,13 +23,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     `;
 
     const labelClasses = `
-      block text-sm font-medium mb-2
+      block text-xs sm:text-sm font-medium mb-1 sm:mb-2
       transition-colors duration-200
       ${error ? 'text-red-900' : 'text-gray-700'}
     `;
 
     const errorClasses = `
-      mt-2 text-sm font-medium text-red-600
+      mt-1 sm:mt-2 text-xs sm:text-sm font-medium text-red-600
       animate-fade-in
     `;
 
@@ -45,7 +46,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             className={inputClasses}
             {...props}
           />
-          <div className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity opacity-0 group-hover:opacity-100 bg-[#E3A872]/5"></div>
+          <div className="absolute inset-0 rounded-xl sm:rounded-2xl pointer-events-none transition-opacity opacity-0 group-hover:opacity-100 bg-[#E3A872]/5"></div>
         </div>
         {error && (
           <p className={errorClasses} id={`${props.id}-error`}>
