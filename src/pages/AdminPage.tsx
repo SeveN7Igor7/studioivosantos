@@ -52,6 +52,7 @@ export const AdminPage: React.FC = () => {
   const [dailyProfit, setDailyProfit] = useState(0);
   const [monthlyProfit, setMonthlyProfit] = useState(0);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [existingAppointments, setExistingAppointments] = useState<any[]>([]);
   const [editForm, setEditForm] = useState<Appointment>({
     dia: format(new Date(), 'dd/MM/yyyy'),
     horario: '',
@@ -84,6 +85,52 @@ export const AdminPage: React.FC = () => {
     return thirtyMinuteServicesCount === 1 ? 30 : 0;
   };
 
+  // Convert time string to minutes for easier calculation
+  const timeToMinutes = (timeStr: string) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Check if a time slot conflicts with existing appointments
+  const isTimeSlotConflicting = (timeSlot: string, duration: number, excludeId?: string) => {
+    const startMinutes = timeToMinutes(timeSlot);
+    const endMinutes = startMinutes + duration;
+    
+    // Check against existing appointments for the selected date
+    const dateAppointments = existingAppointments.filter(app => 
+      app.dia === editForm.dia && app.id !== excludeId
+    );
+    
+    for (const appointment of dateAppointments) {
+      const existingStartMinutes = timeToMinutes(appointment.horario);
+      const existingDuration = appointment.duration || 30;
+      const existingEndMinutes = existingStartMinutes + existingDuration;
+      
+      // Check for overlap: appointments overlap if:
+      // (new start < existing end) AND (new end > existing start)
+      if (startMinutes < existingEndMinutes && endMinutes > existingStartMinutes) {
+        return true;
+      }
+    }
+
+    // Check lunch hour conflict
+    const lunchStartMinutes = 12 * 60; // 12:00
+    const lunchEndMinutes = 13 * 60;   // 13:00
+    
+    if (startMinutes < lunchEndMinutes && endMinutes > lunchStartMinutes) {
+      return true;
+    }
+
+    // Check if appointment would end after 21:00 (absolute latest end time)
+    // This allows 1-hour appointments to start at 20:00 and end at 21:00
+    const absoluteEndTime = 21 * 60; // 21:00
+    if (endMinutes > absoluteEndTime) {
+      return true;
+    }
+
+    return false;
+  };
+
   useEffect(() => {
     const appointmentsRef = ref(db, 'agendamentobarbeiro');
     const completedRef = ref(db, 'finalizados');
@@ -100,6 +147,7 @@ export const AdminPage: React.FC = () => {
         ]);
 
         const allAppointments: Appointment[] = [];
+        const existingApps: any[] = [];
         
         // Active appointments
         if (appointmentsSnap.exists()) {
@@ -108,6 +156,11 @@ export const AdminPage: React.FC = () => {
               ...appointment,
               id,
               status: 'active'
+            });
+            existingApps.push({
+              ...appointment,
+              id,
+              duration: appointment.duration || 30
             });
           });
         }
@@ -141,6 +194,7 @@ export const AdminPage: React.FC = () => {
         });
         
         setAppointments(allAppointments);
+        setExistingAppointments(existingApps);
 
         // Calculate daily profit
         const selectedDateStr = format(selectedDate, 'dd/MM/yyyy');
@@ -202,21 +256,10 @@ export const AdminPage: React.FC = () => {
           cancelled: cancelledCount
         });
 
-        const bookedSlots = new Set<string>();
-
-        if (appointmentsSnap.exists()) {
-          Object.values(appointmentsSnap.val()).forEach((app: any) => {
-            if (app.dia === selectedDateStr) {
-              bookedSlots.add(app.horario);
-            }
-          });
-        }
-
         if (diasDesativadosSnap.exists()) {
           setDisabledDays(Object.keys(diasDesativadosSnap.val()));
         }
 
-        setBookedTimeSlots(Array.from(bookedSlots));
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -329,29 +372,17 @@ export const AdminPage: React.FC = () => {
       return;
     }
 
-    // Check if trying to schedule during lunch hour (12:00-13:00)
-    if ((hours === 12 && minutes >= 0) || (hours === 12 && minutes < 60)) {
-      alert('Não é possível agendar durante o horário de almoço (12:00 - 13:00)');
-      return;
-    }
-
-    // Check if appointment would extend into lunch hour
     const duration = getTotalDuration(selectedServices);
-    const startTime = hours * 60 + minutes; // Convert to minutes
-    const endTime = startTime + duration;
-    const lunchStart = 12 * 60; // 12:00 in minutes
-    const lunchEnd = 13 * 60; // 13:00 in minutes
-
-    if ((startTime < lunchStart && endTime > lunchStart) || 
-        (startTime >= lunchStart && startTime < lunchEnd)) {
-      alert('O agendamento não pode conflitar com o horário de almoço (12:00 - 13:00)');
+    
+    // Check for conflicts with existing appointments
+    if (isTimeSlotConflicting(editForm.horario, duration, isEditing || undefined)) {
+      alert('Este horário conflita com outro agendamento existente ou ultrapassa o horário de funcionamento');
       return;
     }
 
     try {
       const newId = Date.now().toString();
       const serviceNames = selectedServices.join(', ');
-      const duration = getTotalDuration(selectedServices);
       
       const appointmentData = {
         dia: editForm.dia,
