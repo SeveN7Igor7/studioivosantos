@@ -62,7 +62,7 @@ export const SchedulePage: React.FC = () => {
     return thirtyMinuteServicesCount === 1 ? 30 : 0;
   };
 
-  // Generate all possible time slots for a day
+  // Generate all possible time slots for a day (excluding lunch hour 12:00-13:00)
   const generateTimeSlots = () => {
     const slots: string[] = [];
     let currentTime = parse('09:00', 'HH:mm', new Date());
@@ -73,10 +73,15 @@ export const SchedulePage: React.FC = () => {
 
     while (currentTime <= endTime) {
       const timeStr = format(currentTime, 'HH:mm');
-      // If it's today, only show future times
-      if (format(selectedDate, 'dd/MM/yyyy') !== today || timeStr > currentTimeStr) {
-        slots.push(timeStr);
+      
+      // Skip lunch hour (12:00-13:00)
+      if (timeStr !== '12:00' && timeStr !== '12:30') {
+        // If it's today, only show future times
+        if (format(selectedDate, 'dd/MM/yyyy') !== today || timeStr > currentTimeStr) {
+          slots.push(timeStr);
+        }
       }
+      
       currentTime = addMinutes(currentTime, 30);
     }
 
@@ -99,13 +104,22 @@ export const SchedulePage: React.FC = () => {
       }
     }
 
+    // Prevent appointments that would extend into lunch hour
+    const endTime = addMinutes(timeSlotDate, totalDuration);
+    const endTimeStr = format(endTime, 'HH:mm');
+    
+    // If appointment would end during lunch hour (12:00-13:00), disable it
+    if ((endTimeStr > '12:00' && endTimeStr <= '13:00') || 
+        (timeSlot === '11:30' && totalDuration === 60)) {
+      return true;
+    }
+
     // Allow bookings after 19:30 regardless of duration
     const timeSlotHour = parseInt(timeSlot.split(':')[0]);
     const timeSlotMinutes = parseInt(timeSlot.split(':')[1]);
 
     // Only check end time if the appointment starts before 19:30
     if (timeSlotHour < 19 || (timeSlotHour === 19 && timeSlotMinutes < 30)) {
-      const endTime = addMinutes(timeSlotDate, totalDuration);
       if (format(endTime, 'HH:mm') > '20:00') {
         return true;
       }
@@ -258,58 +272,59 @@ export const SchedulePage: React.FC = () => {
     );
     
     return (
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6">
-        <div className="max-w-xl mx-auto text-center">
-          <CheckCircle className="h-16 w-16 text-[#E3A872] mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Agendamento Confirmado!</h2>
-          <p className="text-gray-600 mb-6">
+      <div className="card-responsive max-w-2xl mx-auto">
+        <div className="text-center">
+          <CheckCircle className="h-12 w-12 sm:h-16 sm:w-16 text-[#E3A872] mx-auto mb-4" />
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Agendamento Confirmado!</h2>
+          <p className="text-sm sm:text-base text-gray-600 mb-6">
             Seu agendamento de {serviceNames} foi marcado para {format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })} das {selectedTimeSlot} às {endTime}.
           </p>
 
           {needsEarlyArrival && (
-            <div className="bg-[#FDF8F3] rounded-2xl p-4 mb-6">
+            <div className="bg-[#FDF8F3] rounded-xl sm:rounded-2xl p-3 sm:p-4 mb-6">
               <div className="flex items-center justify-center">
-                <Clock className="h-5 w-5 text-[#E3A872] mr-2" />
-                <span className="text-gray-700 font-medium">
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-[#E3A872] mr-2" />
+                <span className="text-xs sm:text-sm text-gray-700 font-medium">
                   Por favor, chegue 15 minutos antes do horário marcado
                 </span>
               </div>
             </div>
           )}
 
-          <div className="space-y-4 mb-6">
-            <div className="bg-[#FDF8F3] rounded-2xl p-4">
+          <div className="space-y-3 sm:space-y-4 mb-6">
+            <div className="bg-[#FDF8F3] rounded-xl sm:rounded-2xl p-3 sm:p-4">
               <div className="flex items-center justify-center">
-                <CalendarIcon className="h-5 w-5 text-[#E3A872] mr-2" />
-                <span className="text-gray-700">
+                <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-[#E3A872] mr-2" />
+                <span className="text-xs sm:text-sm text-gray-700">
                   Os detalhes do agendamento foram salvos
                 </span>
               </div>
             </div>
 
-            <div className="bg-[#FDF8F3] rounded-2xl p-4">
+            <div className="bg-[#FDF8F3] rounded-xl sm:rounded-2xl p-3 sm:p-4">
               <div className="flex items-center justify-center mb-2">
-                <Phone className="h-5 w-5 text-[#E3A872] mr-2" />
-                <span className="text-gray-700">
+                <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-[#E3A872] mr-2" />
+                <span className="text-xs sm:text-sm text-gray-700">
                   Contato do Barbeiro: (86) 99940-9360
                 </span>
               </div>
             </div>
 
-            <div className="bg-[#FDF8F3] rounded-2xl p-4">
+            <div className="bg-[#FDF8F3] rounded-xl sm:rounded-2xl p-3 sm:p-4">
               <div className="flex flex-col items-center">
                 <div className="flex items-center mb-2">
-                  <MapPin className="h-5 w-5 text-[#E3A872] mr-2" />
-                  <span className="text-gray-700">
+                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-[#E3A872] mr-2" />
+                  <span className="text-xs sm:text-sm text-gray-700">
                     Rua Pirangi, 1548 - Teresina, Pi
                   </span>
                 </div>
                 <Button
                   onClick={() => window.open('https://maps.app.goo.gl/QmpM6serdf8M4Dr46')}
                   variant="outline"
+                  size="sm"
                   className="mt-2 border-[#E3A872] text-[#E3A872] hover:bg-[#E3A872] hover:text-white"
                 >
-                  <MapPin className="h-4 w-4 mr-2" />
+                  <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                   Ver no Maps
                 </Button>
               </div>
@@ -318,6 +333,7 @@ export const SchedulePage: React.FC = () => {
 
           <Button
             onClick={handleBookAnother}
+            size="md"
             className="bg-[#E3A872] hover:bg-[#D89860]"
           >
             Agendar outro horário
@@ -340,86 +356,88 @@ export const SchedulePage: React.FC = () => {
   );
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Agendar um Horário</h1>
-        
-        <div className="space-y-6">
+    <div className="card-responsive max-w-4xl mx-auto">
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Agendar um Horário</h1>
+      
+      <div className="space-y-4 sm:space-y-6">
+        <div>
+          <ServiceSelection
+            selectedServices={selectedServices}
+            onSelectService={handleSelectService}
+          />
+        </div>
+
+        {selectedServices.length > 0 && (
           <div>
-            <ServiceSelection
-              selectedServices={selectedServices}
-              onSelectService={handleSelectService}
+            <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Selecione uma data</h2>
+            <Calendar
+              selectedDate={selectedDate}
+              onDateChange={handleDateChange}
+              availableDates={availableDates}
             />
           </div>
-
-          {selectedServices.length > 0 && (
-            <div>
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Selecione uma data</h2>
-              <Calendar
-                selectedDate={selectedDate}
-                onDateChange={handleDateChange}
-                availableDates={availableDates}
-              />
+        )}
+        
+        {selectedServices.length > 0 && selectedDate && (
+          <div>
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
+              Horários disponíveis para {format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+            </h3>
+            
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+              {generateTimeSlots().map((time) => (
+                <button
+                  key={time}
+                  onClick={() => handleSelectTimeSlot(time)}
+                  disabled={isTimeSlotDisabled(time)}
+                  className={`
+                    py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium 
+                    ${selectedTimeSlot === time
+                      ? 'bg-[#E3A872] text-white'
+                      : isTimeSlotDisabled(time)
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                      : 'bg-white border border-[#E8D5C4] text-gray-700 hover:bg-[#FDF8F3]'
+                    }
+                    transition-colors duration-150
+                  `}
+                >
+                  {time}
+                </button>
+              ))}
             </div>
-          )}
-          
-          {selectedServices.length > 0 && selectedDate && (
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Horários disponíveis para {format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
-              </h3>
-              
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {generateTimeSlots().map((time) => (
-                  <button
-                    key={time}
-                    onClick={() => handleSelectTimeSlot(time)}
-                    disabled={isTimeSlotDisabled(time)}
-                    className={`
-                      py-2 px-3 rounded-md text-sm font-medium 
-                      ${selectedTimeSlot === time
-                        ? 'bg-[#E3A872] text-white'
-                        : isTimeSlotDisabled(time)
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                        : 'bg-white border border-[#E8D5C4] text-gray-700 hover:bg-[#FDF8F3]'
-                      }
-                      transition-colors duration-150
-                    `}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
-              
-              <div className="mt-2 space-y-2">
-                {showHourDurationWarning() && (
-                  <p className="text-sm text-gray-600">
-                    * Este agendamento terá duração de 1 hora
-                  </p>
-                )}
-                {needsEarlyArrival && (
-                  <p className="text-sm font-medium text-[#E3A872]">
-                    * Por favor, chegue 15 minutos antes do horário marcado
-                  </p>
-                )}
-              </div>
+            
+            <div className="mt-2 space-y-1 sm:space-y-2">
+              <p className="text-xs sm:text-sm text-gray-500">
+                * Horário de almoço: 12:00 - 13:00 (não disponível para agendamentos)
+              </p>
+              {showHourDurationWarning() && (
+                <p className="text-xs sm:text-sm text-gray-600">
+                  * Este agendamento terá duração de 1 hora
+                </p>
+              )}
+              {needsEarlyArrival && (
+                <p className="text-xs sm:text-sm font-medium text-[#E3A872]">
+                  * Por favor, chegue 15 minutos antes do horário marcado
+                </p>
+              )}
             </div>
-          )}
-          
-          {selectedTimeSlot && selectedServices.length > 0 && (
-            <div>
-              <Button
-                onClick={handleBookAppointment}
-                isLoading={isLoading}
-                variant="primary"
-                fullWidth
-                className="bg-[#E3A872] hover:bg-[#D89860]"
-              >
-                Confirmar Agendamento
-              </Button>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
+        
+        {selectedTimeSlot && selectedServices.length > 0 && (
+          <div>
+            <Button
+              onClick={handleBookAppointment}
+              isLoading={isLoading}
+              variant="primary"
+              fullWidth
+              size="md"
+              className="bg-[#E3A872] hover:bg-[#D89860]"
+            >
+              Confirmar Agendamento
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
