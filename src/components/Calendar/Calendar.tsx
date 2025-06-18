@@ -151,8 +151,8 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
   const today = startOfDay(new Date());
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
-      <div className="flex flex-col space-y-4">
+    <div className="card-responsive w-full max-w-full overflow-hidden">
+      <div className="flex flex-col space-y-3 sm:space-y-4">
         {isAdmin && (
           <div className="flex justify-end">
             <label className="inline-flex items-center cursor-pointer">
@@ -163,9 +163,9 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
                   checked={isEditMode}
                   onChange={() => setIsEditMode(!isEditMode)}
                 />
-                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#E3A872]"></div>
+                <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-[#E3A872]"></div>
               </div>
-              <span className="ml-2 text-sm font-medium text-gray-700">
+              <span className="ml-2 text-xs sm:text-sm font-medium text-gray-700">
                 {isEditMode ? 'Modo Edição' : 'Modo Visualização'}
               </span>
             </label>
@@ -173,28 +173,28 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
         )}
 
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 capitalize">
             {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
           </h2>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             <button
               onClick={handlePreviousMonth}
-              className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+              className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl hover:bg-gray-100 transition-colors duration-200"
             >
-              <ChevronLeft className="h-5 w-5 text-gray-600" />
+              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
             </button>
             <button
               onClick={handleNextMonth}
-              className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+              className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl hover:bg-gray-100 transition-colors duration-200"
             >
-              <ChevronRight className="h-5 w-5 text-gray-600" />
+              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
             </button>
           </div>
         </div>
 
         <CalendarHeader />
 
-        <div className="grid grid-cols-7 gap-2">
+        <div className="calendar-grid">
           {calendarDays.map((day) => {
             const formattedDate = format(day, 'dd/MM/yyyy');
             const isCurrentMonth = isSameMonth(day, currentMonth);
@@ -219,8 +219,7 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
                 }}
                 disabled={!isClickableInViewMode && !isClickableInEditMode}
                 className={`
-                  relative p-2 h-24 flex flex-col items-center justify-between
-                  rounded-xl transition-all
+                  ${isAdmin ? 'calendar-day-admin' : 'calendar-day'} relative
                   ${isCurrentMonth ? isDisabled ? 'text-red-700' : 'text-gray-900' : 'text-gray-400'}
                   ${isSelected ? 'bg-[#E3A872] text-white' : ''}
                   ${!isSelected && (isClickableInViewMode || isClickableInEditMode) ? 'hover:bg-[#E3A872] hover:bg-opacity-10' : ''}
@@ -230,22 +229,24 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
                   ${isEditMode && isAdmin ? 'cursor-pointer' : (!shouldBeClickable ? 'cursor-not-allowed' : 'cursor-pointer')}
                 `}
               >
-                <span className={`text-lg font-medium ${isSelected ? 'text-white' : isDisabled ? 'text-red-700' : ''}`}>
-                  {format(day, 'd')}
-                </span>
-                {!isEditMode && isAdmin && (
-                  <div className="flex flex-col items-center text-[11px] leading-tight">
-                    <span className={`${isSelected ? 'text-white' : isDisabled ? 'text-red-700' : 'text-[#E3A872]'}`}>
-                      {dayStats.active || '-'}
-                    </span>
-                    <span className={`${isSelected ? 'text-white' : isDisabled ? 'text-red-700' : 'text-green-600'}`}>
-                      {dayStats.completed || '-'}
-                    </span>
-                    <span className={`${isSelected ? 'text-white' : isDisabled ? 'text-red-700' : 'text-red-600'}`}>
-                      {dayStats.cancelled || '-'}
-                    </span>
-                  </div>
-                )}
+                <div className="calendar-day-content">
+                  <span className={`calendar-day-number text-sm sm:text-base md:text-lg ${isSelected ? 'text-white' : isDisabled ? 'text-red-700' : ''}`}>
+                    {format(day, 'd')}
+                  </span>
+                  {!isEditMode && isAdmin && (
+                    <div className="calendar-day-stats">
+                      <span className={`${isSelected ? 'text-white' : isDisabled ? 'text-red-700' : 'text-[#E3A872]'}`}>
+                        {dayStats.active || '-'}
+                      </span>
+                      <span className={`${isSelected ? 'text-white' : isDisabled ? 'text-red-700' : 'text-green-600'}`}>
+                        {dayStats.completed || '-'}
+                      </span>
+                      <span className={`${isSelected ? 'text-white' : isDisabled ? 'text-red-700' : 'text-red-600'}`}>
+                        {dayStats.cancelled || '-'}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </button>
             );
           })}
