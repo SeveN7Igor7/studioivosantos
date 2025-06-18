@@ -37,6 +37,7 @@ export const SchedulePage: React.FC = () => {
   const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
   const [currentAppointmentId, setCurrentAppointmentId] = useState<string | null>(null);
   const [disabledDays, setDisabledDays] = useState<{ [key: string]: boolean }>({});
+  const [existingAppointments, setExistingAppointments] = useState<any[]>([]);
   const { user } = useAuth();
 
   const availableDates = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i + 1));
@@ -88,44 +89,66 @@ export const SchedulePage: React.FC = () => {
     return slots;
   };
 
+  // Convert time string to minutes for easier calculation
+  const timeToMinutes = (timeStr: string) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Convert minutes back to time string
+  const minutesToTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
+
   // Check if a time slot should be disabled based on existing bookings
   const isTimeSlotDisabled = (timeSlot: string) => {
     const totalDuration = getTotalDuration();
-    const timeSlotDate = parse(timeSlot, 'HH:mm', new Date());
+    if (totalDuration === 0) return false; // No duration means no conflict possible
     
-    // For hour-long appointments, check both 30-minute slots
-    const intervalsToCheck = Math.ceil(totalDuration / 30);
+    const startMinutes = timeToMinutes(timeSlot);
+    const endMinutes = startMinutes + totalDuration;
     
-    // Check each 30-minute interval that would be occupied by this appointment
-    for (let i = 0; i < intervalsToCheck; i++) {
-      const checkTime = format(addMinutes(timeSlotDate, i * 30), 'HH:mm');
-      if (bookedTimeSlots.includes(checkTime)) {
+    // Check if this appointment would conflict with existing appointments
+    for (const appointment of existingAppointments) {
+      const existingStartMinutes = timeToMinutes(appointment.horario);
+      const existingDuration = appointment.duration || 30; // Default to 30 minutes if not specified
+      const existingEndMinutes = existingStartMinutes + existingDuration;
+      
+      // Check for overlap: appointments overlap if:
+      // (new start < existing end) AND (new end > existing start)
+      if (startMinutes < existingEndMinutes && endMinutes > existingStartMinutes) {
         return true;
       }
     }
 
-    // Prevent appointments that would extend into lunch hour
-    const endTime = addMinutes(timeSlotDate, totalDuration);
-    const endTimeStr = format(endTime, 'HH:mm');
+    // Prevent appointments that would extend into lunch hour (12:00-13:00)
+    const lunchStartMinutes = 12 * 60; // 12:00
+    const lunchEndMinutes = 13 * 60;   // 13:00
     
-    // If appointment would end during lunch hour (12:00-13:00), disable it
-    if ((endTimeStr > '12:00' && endTimeStr <= '13:00') || 
-        (timeSlot === '11:30' && totalDuration === 60)) {
+    if (startMinutes < lunchEndMinutes && endMinutes > lunchStartMinutes) {
       return true;
     }
 
-    // Allow bookings after 19:30 regardless of duration
-    const timeSlotHour = parseInt(timeSlot.split(':')[0]);
-    const timeSlotMinutes = parseInt(timeSlot.split(':')[1]);
-
-    // Only check end time if the appointment starts before 19:30
-    if (timeSlotHour < 19 || (timeSlotHour === 19 && timeSlotMinutes < 30)) {
-      if (format(endTime, 'HH:mm') > '20:00') {
-        return true;
-      }
+    // Check if appointment would end after 21:00 (absolute latest end time)
+    // This allows 1-hour appointments to start at 20:00 and end at 21:00
+    const absoluteEndTime = 21 * 60; // 21:00
+    if (endMinutes > absoluteEndTime) {
+      return true;
     }
 
     return false;
+  };
+
+  // Generate available time slots considering conflicts
+  const getAvailableTimeSlots = () => {
+    const allSlots = generateTimeSlots();
+    const totalDuration = getTotalDuration();
+    
+    if (totalDuration === 0) return allSlots;
+    
+    return allSlots.filter(slot => !isTimeSlotDisabled(slot));
   };
 
   useEffect(() => {
@@ -140,23 +163,21 @@ export const SchedulePage: React.FC = () => {
           get(diasDesativadosRef)
         ]);
         
-        const bookedSlots: string[] = [];
+        const appointments: any[] = [];
         
         if (appointmentsSnap.exists()) {
           Object.values(appointmentsSnap.val()).forEach((appointment: any) => {
             if (appointment.dia === formattedDate) {
-              bookedSlots.push(appointment.horario);
-              
-              // If the appointment is an hour long, block the next slot too
-              if (appointment.duration === 60) {
-                const nextSlot = format(addMinutes(parse(appointment.horario, 'HH:mm', new Date()), 30), 'HH:mm');
-                bookedSlots.push(nextSlot);
-              }
+              appointments.push({
+                horario: appointment.horario,
+                duration: appointment.duration || 30, // Default to 30 minutes if not specified
+                servico: appointment.servico
+              });
             }
           });
         }
 
-        setBookedTimeSlots(bookedSlots);
+        setExistingAppointments(appointments);
 
         if (diasDesativadosSnap.exists()) {
           setDisabledDays(diasDesativadosSnap.val());
@@ -168,6 +189,11 @@ export const SchedulePage: React.FC = () => {
 
     fetchData();
   }, [selectedDate]);
+
+  // Reset selected time slot when services change
+  useEffect(() => {
+    setSelectedTimeSlot(null);
+  }, [selectedServices]);
 
   const handleDateChange = (date: Date) => {
     const formattedDate = format(date, 'dd/MM/yyyy');
@@ -187,8 +213,6 @@ export const SchedulePage: React.FC = () => {
         ? prev.filter(id => id !== serviceId)
         : [...prev, serviceId];
       
-      // Reset time slot if services change
-      setSelectedTimeSlot(null);
       return newServices;
     });
   };
@@ -355,6 +379,8 @@ export const SchedulePage: React.FC = () => {
     service === 'carbonoplastia' || service === 'taninoplastia'
   );
 
+  const availableTimeSlots = getAvailableTimeSlots();
+
   return (
     <div className="card-responsive max-w-4xl mx-auto">
       <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Agendar um Horário</h1>
@@ -384,27 +410,36 @@ export const SchedulePage: React.FC = () => {
               Horários disponíveis para {format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
             </h3>
             
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-              {generateTimeSlots().map((time) => (
-                <button
-                  key={time}
-                  onClick={() => handleSelectTimeSlot(time)}
-                  disabled={isTimeSlotDisabled(time)}
-                  className={`
-                    py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium 
-                    ${selectedTimeSlot === time
-                      ? 'bg-[#E3A872] text-white'
-                      : isTimeSlotDisabled(time)
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                      : 'bg-white border border-[#E8D5C4] text-gray-700 hover:bg-[#FDF8F3]'
-                    }
-                    transition-colors duration-150
-                  `}
-                >
-                  {time}
-                </button>
-              ))}
-            </div>
+            {availableTimeSlots.length > 0 ? (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                {availableTimeSlots.map((time) => (
+                  <button
+                    key={time}
+                    onClick={() => handleSelectTimeSlot(time)}
+                    className={`
+                      py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium 
+                      ${selectedTimeSlot === time
+                        ? 'bg-[#E3A872] text-white'
+                        : 'bg-white border border-[#E8D5C4] text-gray-700 hover:bg-[#FDF8F3]'
+                      }
+                      transition-colors duration-150
+                    `}
+                  >
+                    {time}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Clock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">
+                  Não há horários disponíveis para os serviços selecionados nesta data.
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Tente selecionar outra data ou diferentes serviços.
+                </p>
+              </div>
+            )}
             
             <div className="mt-2 space-y-1 sm:space-y-2">
               <p className="text-xs sm:text-sm text-gray-500">
