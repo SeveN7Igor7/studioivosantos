@@ -329,6 +329,25 @@ export const AdminPage: React.FC = () => {
       return;
     }
 
+    // Check if trying to schedule during lunch hour (12:00-13:00)
+    if ((hours === 12 && minutes >= 0) || (hours === 12 && minutes < 60)) {
+      alert('Não é possível agendar durante o horário de almoço (12:00 - 13:00)');
+      return;
+    }
+
+    // Check if appointment would extend into lunch hour
+    const duration = getTotalDuration(selectedServices);
+    const startTime = hours * 60 + minutes; // Convert to minutes
+    const endTime = startTime + duration;
+    const lunchStart = 12 * 60; // 12:00 in minutes
+    const lunchEnd = 13 * 60; // 13:00 in minutes
+
+    if ((startTime < lunchStart && endTime > lunchStart) || 
+        (startTime >= lunchStart && startTime < lunchEnd)) {
+      alert('O agendamento não pode conflitar com o horário de almoço (12:00 - 13:00)');
+      return;
+    }
+
     try {
       const newId = Date.now().toString();
       const serviceNames = selectedServices.join(', ');
@@ -425,15 +444,15 @@ export const AdminPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
       <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-        <div className="p-6 bg-gradient-to-r from-[#E3A872] to-[#D89860]">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-            <div>
-              <h1 className="text-2xl font-bold text-white mb-2">
+        <div className="p-3 sm:p-4 lg:p-6 bg-gradient-to-r from-[#E3A872] to-[#D89860]">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-3 lg:space-y-0">
+            <div className="w-full lg:w-auto">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-1 sm:mb-2">
                 Painel Administrativo
               </h1>
-              <p className="text-[#FDF8F3]">
+              <p className="text-xs sm:text-sm lg:text-base text-[#FDF8F3]">
                 Gerenciamento de agendamentos
               </p>
             </div>
@@ -450,52 +469,52 @@ export const AdminPage: React.FC = () => {
                   userEmail: '',
                 });
               }}
-              className="bg-white text-[#E3A872] px-4 py-2 rounded-lg hover:bg-[#FDF8F3] transition-colors duration-200 flex items-center whitespace-nowrap"
+              className="w-full lg:w-auto bg-white text-[#E3A872] px-3 sm:px-4 py-2 rounded-lg hover:bg-[#FDF8F3] transition-colors duration-200 flex items-center justify-center"
             >
-              <Plus className="h-5 w-5 mr-2" />
-              <span className="font-medium">Novo Agendamento</span>
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+              <span className="font-medium text-sm sm:text-base">Novo Agendamento</span>
             </button>
           </div>
         </div>
 
-        <div className="p-6">
-          <div className="mb-6 bg-[#FDF8F3] rounded-lg p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
-              <div className="flex items-center">
-                <TrendingUp className="h-6 w-6 text-[#E3A872] mr-2" />
+        <div className="p-3 sm:p-4 lg:p-6">
+          <div className="mb-4 sm:mb-6 bg-[#FDF8F3] rounded-lg p-3 sm:p-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
+              <div className="flex flex-col sm:flex-row items-center text-center sm:text-left">
+                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-[#E3A872] mb-1 sm:mb-0 sm:mr-2" />
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900">Total</h3>
-                  <p className="text-lg font-semibold text-[#E3A872]">{monthlyStats.total}</p>
+                  <h3 className="text-xs sm:text-sm font-medium text-gray-900">Total</h3>
+                  <p className="text-sm sm:text-lg font-semibold text-[#E3A872]">{monthlyStats.total}</p>
                 </div>
               </div>
-              <div className="flex items-center">
-                <CheckCircle2 className="h-6 w-6 text-green-600 mr-2" />
+              <div className="flex flex-col sm:flex-row items-center text-center sm:text-left">
+                <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 mb-1 sm:mb-0 sm:mr-2" />
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900">Finalizados</h3>
-                  <p className="text-lg font-semibold text-green-600">{monthlyStats.completed}</p>
+                  <h3 className="text-xs sm:text-sm font-medium text-gray-900">Finalizados</h3>
+                  <p className="text-sm sm:text-lg font-semibold text-green-600">{monthlyStats.completed}</p>
                 </div>
               </div>
-              <div className="flex items-center">
-                <Ban className="h-6 w-6 text-red-600 mr-2" />
+              <div className="flex flex-col sm:flex-row items-center text-center sm:text-left">
+                <Ban className="h-5 w-5 sm:h-6 sm:w-6 text-red-600 mb-1 sm:mb-0 sm:mr-2" />
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900">Cancelados</h3>
-                  <p className="text-lg font-semibold text-red-600">{monthlyStats.cancelled}</p>
+                  <h3 className="text-xs sm:text-sm font-medium text-gray-900">Cancelados</h3>
+                  <p className="text-sm sm:text-lg font-semibold text-red-600">{monthlyStats.cancelled}</p>
                 </div>
               </div>
-              <div className="flex items-center">
-                <DollarSign className="h-6 w-6 text-green-600 mr-2" />
+              <div className="flex flex-col sm:flex-row items-center text-center sm:text-left">
+                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 mb-1 sm:mb-0 sm:mr-2" />
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900">Lucro Diário</h3>
-                  <p className="text-lg font-semibold text-green-600">
+                  <h3 className="text-xs sm:text-sm font-medium text-gray-900">Lucro Diário</h3>
+                  <p className="text-sm sm:text-lg font-semibold text-green-600">
                     R$ {dailyProfit.toFixed(2)}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center">
-                <DollarSign className="h-6 w-6 text-green-600 mr-2" />
+              <div className="flex flex-col sm:flex-row items-center text-center sm:text-left col-span-2 sm:col-span-1">
+                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 mb-1 sm:mb-0 sm:mr-2" />
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900">Lucro Mensal</h3>
-                  <p className="text-lg font-semibold text-green-600">
+                  <h3 className="text-xs sm:text-sm font-medium text-gray-900">Lucro Mensal</h3>
+                  <p className="text-sm sm:text-lg font-semibold text-green-600">
                     R$ {monthlyProfit.toFixed(2)}
                   </p>
                 </div>
@@ -503,22 +522,22 @@ export const AdminPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="mb-4 sm:mb-6 grid grid-cols-1 xl:grid-cols-2 gap-4">
             <div>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 pointer-events-none" />
                 <Input
                   placeholder="Buscar por nome do cliente..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   fullWidth
-                  className="pl-10"
+                  className="pl-8 sm:pl-10"
                 />
               </div>
             </div>
-            <div className="bg-white p-4 rounded-lg border border-[#E8D5C4]">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Calendário</h3>
+            <div className="bg-white p-3 sm:p-4 rounded-lg border border-[#E8D5C4]">
+              <div className="flex justify-between items-center mb-3 sm:mb-4">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">Calendário</h3>
               </div>
               <Calendar
                 selectedDate={selectedDate}
@@ -530,12 +549,12 @@ export const AdminPage: React.FC = () => {
           </div>
 
           {(isAdding || isEditing) && (
-            <div className="mb-6 bg-white p-6 rounded-lg border border-[#E8D5C4]">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
+            <div className="mb-4 sm:mb-6 bg-white p-3 sm:p-4 lg:p-6 rounded-lg border border-[#E8D5C4]">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
                 {isAdding ? 'Novo Agendamento' : 'Editar Agendamento'}
               </h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                   <Input
                     label="Nome do Cliente"
                     value={editForm.userName}
@@ -559,16 +578,16 @@ export const AdminPage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                     Serviços (selecione quantos quiser)
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                     {services.map((service) => (
                       <button
                         key={service}
                         onClick={() => handleSelectService(service)}
                         className={`
-                          p-2 rounded-md text-sm font-medium transition-colors
+                          p-2 rounded-md text-xs sm:text-sm font-medium transition-colors
                           ${selectedServices.includes(service)
                             ? 'bg-[#E3A872] text-white'
                             : 'bg-white border border-[#E8D5C4] text-gray-700 hover:bg-[#FDF8F3]'
@@ -582,16 +601,16 @@ export const AdminPage: React.FC = () => {
                   
                   {selectedServices.length > 0 && (
                     <div className="mt-2 space-y-1">
-                      <p className="text-sm text-gray-600">
+                      <p className="text-xs sm:text-sm text-gray-600">
                         Serviços selecionados: {selectedServices.join(', ')}
                       </p>
                       {showHourDurationWarning() && (
-                        <p className="text-sm font-medium text-[#E3A872]">
+                        <p className="text-xs sm:text-sm font-medium text-[#E3A872]">
                           * Este agendamento terá duração de 1 hora
                         </p>
                       )}
                       {needsEarlyArrival && (
-                        <p className="text-sm font-medium text-[#E3A872]">
+                        <p className="text-xs sm:text-sm font-medium text-[#E3A872]">
                           * Cliente deve chegar 15 minutos antes do horário marcado
                         </p>
                       )}
@@ -599,20 +618,25 @@ export const AdminPage: React.FC = () => {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Horário (08:00 - 22:00)
-                  </label>
-                  <Input
-                    value={editForm.horario}
-                    onChange={handleTimeChange}
-                    placeholder="HH:MM"
-                    className="w-32"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                      Horário (08:00 - 22:00, exceto 12:00 - 13:00)
+                    </label>
+                    <Input
+                      value={editForm.horario}
+                      onChange={handleTimeChange}
+                      placeholder="HH:MM"
+                      className="w-full sm:w-32"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      * Horário de almoço: 12:00 - 13:00 (não disponível)
+                    </p>
+                  </div>
                 </div>
               </div>
               
-              <div className="mt-6 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
+              <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -622,7 +646,7 @@ export const AdminPage: React.FC = () => {
                   }}
                   className="w-full sm:w-auto border-[#E3A872] text-[#E3A872] hover:bg-[#FDF8F3]"
                 >
-                  <X className="h-4 w-4 mr-2" />
+                  <X className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                   Cancelar
                 </Button>
                 <Button
@@ -630,14 +654,14 @@ export const AdminPage: React.FC = () => {
                   className="w-full sm:w-auto bg-[#E3A872] hover:bg-[#D89860]"
                   disabled={selectedServices.length === 0}
                 >
-                  <Check className="h-4 w-4 mr-2" />
+                  <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                   Salvar
                 </Button>
               </div>
             </div>
           )}
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
             {filteredAppointments.map((appointment) => (
               <div
                 key={appointment.id}
@@ -648,71 +672,71 @@ export const AdminPage: React.FC = () => {
                     'border-[#E8D5C4]'}
                 `}
               >
-                <div className="p-5">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="p-3 sm:p-4 lg:p-5">
+                  <div className="flex items-center justify-between mb-3 sm:mb-4">
                     <div className="flex items-center space-x-2">
-                      <CalendarIcon className={`h-5 w-5 ${
+                      <CalendarIcon className={`h-4 w-4 sm:h-5 sm:w-5 ${
                         appointment.status === 'completed' ? 'text-green-600' :
                         appointment.status === 'cancelled' ? 'text-red-600' :
                         'text-[#E3A872]'
                       }`} />
-                      <span className="font-medium text-gray-900">{appointment.dia}</span>
+                      <span className="font-medium text-gray-900 text-xs sm:text-sm">{appointment.dia}</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Clock className={`h-5 w-5 ${
+                      <Clock className={`h-4 w-4 sm:h-5 sm:w-5 ${
                         appointment.status === 'completed' ? 'text-green-600' :
                         appointment.status === 'cancelled' ? 'text-red-600' :
                         'text-[#E3A872]'
                       }`} />
-                      <span className="font-medium text-gray-900">{appointment.horario}</span>
+                      <span className="font-medium text-gray-900 text-xs sm:text-sm">{appointment.horario}</span>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     <div className="flex items-center space-x-2">
-                      <User className={`h-5 w-5 ${
+                      <User className={`h-4 w-4 sm:h-5 sm:w-5 ${
                         appointment.status === 'completed' ? 'text-green-600' :
                         appointment.status === 'cancelled' ? 'text-red-600' :
                         'text-[#E3A872]'
                       }`} />
-                      <span className="text-gray-900">{appointment.userName}</span>
+                      <span className="text-gray-900 text-xs sm:text-sm truncate">{appointment.userName}</span>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      <Scissors className={`h-5 w-5 ${
+                    <div className="flex items-start space-x-2">
+                      <Scissors className={`h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0 ${
                         appointment.status === 'completed' ? 'text-green-600' :
                         appointment.status === 'cancelled' ? 'text-red-600' :
                         'text-[#E3A872]'
                       }`} />
-                      <span className="text-gray-900">{appointment.servico}</span>
+                      <span className="text-gray-900 text-xs sm:text-sm break-words">{appointment.servico}</span>
                     </div>
 
                     {appointment.userPhone && (
                       <div className="flex items-center space-x-2">
-                        <Phone className={`h-5 w-5 ${
+                        <Phone className={`h-4 w-4 sm:h-5 sm:w-5 ${
                           appointment.status === 'completed' ? 'text-green-600' :
                           appointment.status === 'cancelled' ? 'text-red-600' :
                           'text-[#E3A872]'
                         }`} />
-                        <span className="text-gray-900">
+                        <span className="text-gray-900 text-xs sm:text-sm">
                           {appointment.userPhone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')}
                         </span>
                       </div>
                     )}
 
                     {appointment.userEmail && (
-                      <div className="flex items-center space-x-2">
-                        <Mail className={`h-5 w-5 ${
+                      <div className="flex items-start space-x-2">
+                        <Mail className={`h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0 ${
                           appointment.status === 'completed' ? 'text-green-600' :
                           appointment.status === 'cancelled' ? 'text-red-600' :
                           'text-[#E3A872]'
                         }`} />
-                        <span className="text-gray-900">{appointment.userEmail}</span>
+                        <span className="text-gray-900 text-xs sm:text-sm break-all">{appointment.userEmail}</span>
                       </div>
                     )}
 
                     {appointment.status && (
-                      <div className={`mt-2 text-sm font-medium ${
+                      <div className={`mt-2 text-xs sm:text-sm font-medium ${
                         appointment.status === 'completed' ? 'text-green-600' :
                         appointment.status === 'cancelled' ? 'text-red-600' :
                         'text-[#E3A872]'
@@ -732,29 +756,34 @@ export const AdminPage: React.FC = () => {
                   </div>
 
                   {appointment.status === 'active' && (
-                    <div className="mt-4 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleComplete(appointment)}
-                        className="w-full sm:w-auto text-green-600 hover:bg-green-50 border-green-600"
-                      >
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Finalizado
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleDelete(appointment)}
-                        className="w-full sm:w-auto text-red-600 hover:bg-red-50 border-red-600"
-                      >
-                        <X className="h-4 w-4 mr-2" />
-                        Cancelar
-                      </Button>
+                    <div className="mt-3 sm:mt-4 flex flex-col space-y-2">
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => handleComplete(appointment)}
+                          className="w-full text-green-600 hover:bg-green-50 border-green-600 text-xs sm:text-sm"
+                          size="sm"
+                        >
+                          <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          Finalizado
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleDelete(appointment)}
+                          className="w-full text-red-600 hover:bg-red-50 border-red-600 text-xs sm:text-sm"
+                          size="sm"
+                        >
+                          <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          Cancelar
+                        </Button>
+                      </div>
                       <Button
                         variant="outline"
                         onClick={() => handleEdit(appointment)}
-                        className="w-full sm:w-auto border-[#E3A872] text-[#E3A872] hover:bg-[#FDF8F3]"
+                        className="w-full border-[#E3A872] text-[#E3A872] hover:bg-[#FDF8F3] text-xs sm:text-sm"
+                        size="sm"
                       >
-                        <Edit2 className="h-4 w-4 mr-2" />
+                        <Edit2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                         Editar
                       </Button>
                     </div>
@@ -765,12 +794,12 @@ export const AdminPage: React.FC = () => {
           </div>
 
           {filteredAppointments.length === 0 && (
-            <div className="text-center py-12">
-              <CalendarIcon className="h-12 w-12 text-[#E3A872] mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <div className="text-center py-8 sm:py-12">
+              <CalendarIcon className="h-8 w-8 sm:h-12 sm:w-12 text-[#E3A872] mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
                 Nenhum agendamento encontrado
               </h3>
-              <p className="text-gray-500">
+              <p className="text-sm sm:text-base text-gray-500">
                 Não há agendamentos para o período selecionado
               </p>
             </div>
