@@ -231,10 +231,10 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
             const formattedDate = format(day, 'dd/MM/yyyy');
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const isSelected = isSameDay(day, selectedDate);
-            const isPastDay = isBefore(day, today) && !isAdmin;
+            const isPastDay = isBefore(day, today);
             const isTuesday = getDay(day) === 2; // Tuesday = 2 (0=Sunday, 1=Monday, 2=Tuesday...)
             const isManuallyDisabled = disabledDays[format(day, 'dd-MM-yyyy')]?.blocked;
-            const isDisabled = isManuallyDisabled || isPastDay || isTuesday;
+            const isDisabled = isManuallyDisabled || (isPastDay && !isAdmin) || isTuesday;
             const dayStats = dayAppointments[formattedDate] || { active: 0, completed: 0, cancelled: 0 };
 
             // Determine if the day should be clickable
@@ -257,6 +257,10 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
                 dayColorClass = 'text-red-700';
               } else if (isManuallyDisabled) {
                 bgColorClass = isEditMode ? 'bg-red-200' : 'bg-red-100';
+                dayColorClass = 'text-red-700';
+              } else if (isPastDay && !isAdmin) {
+                // Past days for non-admin users - show in red
+                bgColorClass = 'bg-red-100';
                 dayColorClass = 'text-red-700';
               } else {
                 dayColorClass = 'text-gray-900';
@@ -299,6 +303,8 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
                 title={
                   isTuesday 
                     ? 'Terça-feira - Dia não disponível para agendamentos' 
+                    : isPastDay && !isAdmin
+                      ? 'Data já passou - não disponível para agendamentos'
                     : isEditMode && isAdmin 
                       ? (isManuallyDisabled ? 'Clique para desbloquear este dia' : 'Clique para bloquear este dia')
                       : undefined
@@ -328,6 +334,13 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
                       </div>
                     </div>
                   )}
+                  {!isAdmin && isPastDay && isCurrentMonth && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 bg-red-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">✕</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </button>
             );
@@ -341,6 +354,9 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
             </p>
             <p className="text-xs sm:text-sm text-gray-500">
               * Sábados: agendamentos até às 18:00 (atendimento até às 19:00)
+            </p>
+            <p className="text-xs sm:text-sm text-red-600">
+              * Dias em vermelho não estão disponíveis para agendamentos
             </p>
           </div>
         )}
