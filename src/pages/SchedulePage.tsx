@@ -33,8 +33,8 @@ const getNextValidDate = () => {
   const today = startOfDay(new Date());
   let nextDate = addDays(today, 1); // Start from tomorrow
   
-  // Keep looking for a valid date (not Tuesday and not in the past)
-  while (getDay(nextDate) === 2) { // Skip Tuesdays
+  // Keep looking for a valid date (not Tuesday, not Sunday, and not in the past)
+  while (getDay(nextDate) === 2 || getDay(nextDate) === 0) { // Skip Tuesdays (2) and Sundays (0)
     nextDate = addDays(nextDate, 1);
   }
   
@@ -55,8 +55,8 @@ export const SchedulePage: React.FC = () => {
 
   const availableDates = Array.from({ length: 14 }, (_, i) => {
     const date = addDays(new Date(), i + 1);
-    // Filter out Tuesdays (getDay() === 2)
-    return getDay(date) !== 2 ? date : null;
+    // Filter out Tuesdays (getDay() === 2) and Sundays (getDay() === 0)
+    return getDay(date) !== 2 && getDay(date) !== 0 ? date : null;
   }).filter(Boolean) as Date[];
 
   // Calculate total duration of selected services
@@ -237,10 +237,11 @@ export const SchedulePage: React.FC = () => {
   const handleDateChange = (date: Date) => {
     const formattedDate = format(date, 'dd/MM/yyyy');
     const isTuesday = getDay(date) === 2;
+    const isSunday = getDay(date) === 0;
     const isPastDate = isBefore(date, startOfDay(new Date()));
     
-    // Don't allow selecting Tuesdays, past dates, or manually disabled days
-    if (!disabledDays[format(date, 'dd-MM-yyyy')]?.blocked && !isTuesday && !isPastDate) {
+    // Don't allow selecting Tuesdays, Sundays, past dates, or manually disabled days
+    if (!disabledDays[format(date, 'dd-MM-yyyy')]?.blocked && !isTuesday && !isSunday && !isPastDate) {
       setSelectedDate(date);
       setSelectedTimeSlot(null);
     }
