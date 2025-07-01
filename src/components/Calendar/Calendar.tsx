@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday, isBefore, startOfDay } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday, isBefore, startOfDay, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { CalendarHeader } from './CalendarHeader';
@@ -14,7 +14,7 @@ interface CalendarProps {
 }
 
 interface DayStats {
-  active: number;
+  active: number
   completed: number;
   cancelled: number;
 }
@@ -43,7 +43,7 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
       const dateRef = ref(db, `diasdesativados/${formattedDate}`);
       
       if (disabledDays[formattedDate]?.blocked) {
-        // If the date is currently blocked, remove it
+        // If the date is currently blocked, remove it (enable it)
         await remove(dateRef);
         setDisabledDays(prev => {
           const newDisabledDays = { ...prev };
@@ -51,7 +51,7 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
           return newDisabledDays;
         });
       } else {
-        // If the date is not blocked, block it
+        // If the date is not blocked, block it (disable it)
         await set(dateRef, { blocked: true });
         setDisabledDays(prev => ({
           ...prev,
@@ -150,6 +150,27 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
 
   const today = startOfDay(new Date());
 
+  const handleDayClick = (day: Date) => {
+    const isCurrentMonth = isSameMonth(day, currentMonth);
+    const isTuesday = getDay(day) === 2;
+    
+    if (isAdmin && isEditMode) {
+      // In edit mode, only allow toggling non-Tuesday days that are in current month
+      if (isCurrentMonth && !isTuesday) {
+        toggleDateOff(day);
+      }
+    } else {
+      // In view mode, handle normal date selection
+      const isPastDay = isBefore(day, today) && !isAdmin;
+      const isManuallyDisabled = disabledDays[format(day, 'dd-MM-yyyy')]?.blocked;
+      const isDisabled = isManuallyDisabled || isPastDay || isTuesday;
+      
+      if (isCurrentMonth && !isDisabled) {
+        onDateChange(day);
+      }
+    }
+  };
+
   return (
     <div className="card-responsive w-full max-w-full overflow-hidden">
       <div className="flex flex-col space-y-3 sm:space-y-4">
@@ -166,9 +187,20 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
                 <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-[#E3A872]"></div>
               </div>
               <span className="ml-2 text-xs sm:text-sm font-medium text-gray-700">
-                {isEditMode ? 'Modo Edição' : 'Modo Visualização'}
+                {isEditMode ? 'Modo Edição Ativo' : 'Modo Visualização'}
               </span>
             </label>
+          </div>
+        )}
+
+        {isAdmin && isEditMode && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-700 font-medium">
+              🔧 Modo Edição: Clique em qualquer dia para bloquear/desbloquear agendamentos
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              Dias bloqueados ficarão indisponíveis para novos agendamentos
+            </p>
           </div>
         )}
 
@@ -200,38 +232,80 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const isSelected = isSameDay(day, selectedDate);
             const isPastDay = isBefore(day, today) && !isAdmin;
-            const isDisabled = disabledDays[format(day, 'dd-MM-yyyy')]?.blocked || isPastDay;
+            const isTuesday = getDay(day) === 2; // Tuesday = 2 (0=Sunday, 1=Monday, 2=Tuesday...)
+            const isManuallyDisabled = disabledDays[format(day, 'dd-MM-yyyy')]?.blocked;
+            const isDisabled = isManuallyDisabled || isPastDay || isTuesday;
             const dayStats = dayAppointments[formattedDate] || { active: 0, completed: 0, cancelled: 0 };
 
-            const shouldBeClickable = isAdmin || (!isDisabled && isCurrentMonth);
-            const isClickableInViewMode = !isEditMode && shouldBeClickable;
-            const isClickableInEditMode = isEditMode && isAdmin;
+            // Determine if the day should be clickable
+            const isClickableInEditMode = isAdmin && isEditMode && isCurrentMonth && !isTuesday;
+            const isClickableInViewMode = !isEditMode && isCurrentMonth && !isDisabled;
+            const isClickable = isClickableInEditMode || isClickableInViewMode;
+
+            // Determine visual state
+            let dayColorClass = '';
+            let bgColorClass = '';
+            let borderClass = 'border border-transparent';
+            
+            if (isSelected && !isEditMode) {
+              bgColorClass = 'bg-[#E3A872]';
+              dayColorClass = 'text-white';
+            } else if (isCurrentMonth) {
+              if (isTuesday) {
+                // Style Tuesdays like manually disabled days (red)
+                bgColorClass = isEditMode ? 'bg-red-200' : 'bg-red-100';
+                dayColorClass = 'text-red-700';
+              } else if (isManuallyDisabled) {
+                bgColorClass = isEditMode ? 'bg-red-200' : 'bg-red-100';
+                dayColorClass = 'text-red-700';
+              } else {
+                dayColorClass = 'text-gray-900';
+                bgColorClass = '';
+              }
+            } else {
+              dayColorClass = 'text-gray-400';
+              bgColorClass = 'opacity-50';
+            }
+
+            if (isToday(day)) {
+              borderClass = 'border-2 border-[#E3A872]';
+            }
+
+            // Hover effects
+            let hoverClass = '';
+            if (isClickable) {
+              if (isEditMode && isManuallyDisabled) {
+                hoverClass = 'hover:bg-red-300';
+              } else if (isEditMode) {
+                hoverClass = 'hover:bg-red-200';
+              } else {
+                hoverClass = 'hover:bg-[#E3A872] hover:bg-opacity-10';
+              }
+            }
 
             return (
               <button
                 key={`${day.toString()}-${index}`}
-                onClick={() => {
-                  if (isAdmin && isEditMode) {
-                    toggleDateOff(day);
-                  } else if (isClickableInViewMode || (isAdmin && !isEditMode)) {
-                    onDateChange(day);
-                  }
-                }}
-                disabled={!isClickableInViewMode && !isClickableInEditMode}
+                onClick={() => handleDayClick(day)}
+                disabled={!isClickable}
                 className={`
                   ${isAdmin ? 'calendar-day-admin' : 'calendar-day'} relative
-                  ${isSelected ? 'selected' : ''}
-                  ${isCurrentMonth ? isDisabled ? 'text-red-700' : 'text-gray-900' : 'text-gray-400'}
-                  ${isSelected ? 'bg-[#E3A872] text-white' : ''}
-                  ${!isSelected && (isClickableInViewMode || isClickableInEditMode) ? 'hover:bg-[#E3A872] hover:bg-opacity-10' : ''}
-                  ${isToday(day) ? 'border-2 border-[#E3A872]' : 'border border-transparent'}
-                  ${isDisabled ? 'bg-red-100 hover:bg-red-200' : ''}
-                  ${(!isCurrentMonth || (!shouldBeClickable && !isClickableInEditMode)) ? 'opacity-50' : ''}
-                  ${isEditMode && isAdmin ? 'cursor-pointer' : (!shouldBeClickable ? 'cursor-not-allowed' : 'cursor-pointer')}
+                  ${bgColorClass}
+                  ${borderClass}
+                  ${hoverClass}
+                  ${isClickable ? 'cursor-pointer' : 'cursor-not-allowed'}
+                  transition-all duration-200
                 `}
+                title={
+                  isTuesday 
+                    ? 'Terça-feira - Dia não disponível para agendamentos' 
+                    : isEditMode && isAdmin 
+                      ? (isManuallyDisabled ? 'Clique para desbloquear este dia' : 'Clique para bloquear este dia')
+                      : undefined
+                }
               >
                 <div className="calendar-day-content">
-                  <span className={`calendar-day-number text-sm sm:text-base md:text-lg ${isSelected ? 'text-white' : isDisabled ? 'text-red-700' : ''}`}>
+                  <span className={`calendar-day-number text-sm sm:text-base md:text-lg ${dayColorClass}`}>
                     {format(day, 'd')}
                   </span>
                   {!isEditMode && isAdmin && (
@@ -247,11 +321,43 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
                       </span>
                     </div>
                   )}
+                  {isEditMode && isAdmin && (isManuallyDisabled || isTuesday) && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">✕</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </button>
             );
           })}
         </div>
+        
+        {!isAdmin && (
+          <div className="mt-2 space-y-1">
+            <p className="text-xs sm:text-sm text-gray-500">
+              * Terças-feiras não estão disponíveis para agendamentos
+            </p>
+            <p className="text-xs sm:text-sm text-gray-500">
+              * Sábados: agendamentos até às 18:00 (atendimento até às 19:00)
+            </p>
+          </div>
+        )}
+
+        {isAdmin && !isEditMode && (
+          <div className="mt-2 space-y-1">
+            <p className="text-xs sm:text-sm text-gray-500">
+              * Números mostram: Agendados / Finalizados / Cancelados
+            </p>
+            <p className="text-xs sm:text-sm text-gray-500">
+              * Terças-feiras não estão disponíveis para agendamentos
+            </p>
+            <p className="text-xs sm:text-sm text-gray-500">
+              * Sábados: agendamentos até às 18:00 (atendimento até às 19:00)
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
