@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { addDays, format, parse, addMinutes, isAfter } from 'date-fns';
+import { addDays, format, parse, addMinutes, isAfter, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar } from '../components/Calendar/Calendar';
 import { TimeSlots } from '../components/TimeSlots';
@@ -40,7 +40,11 @@ export const SchedulePage: React.FC = () => {
   const [existingAppointments, setExistingAppointments] = useState<any[]>([]);
   const { user } = useAuth();
 
-  const availableDates = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i + 1));
+  const availableDates = Array.from({ length: 14 }, (_, i) => {
+    const date = addDays(new Date(), i + 1);
+    // Filter out Tuesdays (getDay() === 2)
+    return getDay(date) !== 2 ? date : null;
+  }).filter(Boolean) as Date[];
 
   // Calculate total duration of selected services
   const getTotalDuration = () => {
@@ -67,10 +71,14 @@ export const SchedulePage: React.FC = () => {
   const generateTimeSlots = () => {
     const slots: string[] = [];
     let currentTime = parse('09:00', 'HH:mm', new Date());
-    const endTime = parse('20:00', 'HH:mm', new Date());
     const now = new Date();
     const today = format(now, 'dd/MM/yyyy');
     const currentTimeStr = format(now, 'HH:mm');
+    const isSaturday = getDay(selectedDate) === 6; // Saturday = 6
+    
+    // Set end time based on day of week - Saturday allows booking until 18:00
+    const endTimeStr = isSaturday ? '18:00' : '20:00';
+    const endTime = parse(endTimeStr, 'HH:mm', new Date());
 
     while (currentTime <= endTime) {
       const timeStr = format(currentTime, 'HH:mm');
@@ -109,6 +117,7 @@ export const SchedulePage: React.FC = () => {
     
     const startMinutes = timeToMinutes(timeSlot);
     const endMinutes = startMinutes + totalDuration;
+    const isSaturday = getDay(selectedDate) === 6;
     
     // Check if this appointment would conflict with existing appointments
     for (const appointment of existingAppointments) {
@@ -131,11 +140,20 @@ export const SchedulePage: React.FC = () => {
       return true;
     }
 
-    // Check if appointment would end after 21:00 (absolute latest end time)
-    // This allows 1-hour appointments to start at 20:00 and end at 21:00
-    const absoluteEndTime = 21 * 60; // 21:00
-    if (endMinutes > absoluteEndTime) {
-      return true;
+    // Check Saturday-specific restrictions
+    if (isSaturday) {
+      // On Saturday, allow booking until 18:00 even if service ends at 19:00
+      // The barber works until 19:00, so 18:00 appointment with 1-hour service is fine
+      const saturdayWorkEndTime = 19 * 60; // 19:00 (when barber stops working)
+      if (endMinutes > saturdayWorkEndTime) {
+        return true;
+      }
+    } else {
+      // Check if appointment would end after 21:00 (absolute latest end time for other days)
+      const absoluteEndTime = 21 * 60; // 21:00
+      if (endMinutes > absoluteEndTime) {
+        return true;
+      }
     }
 
     return false;
@@ -197,7 +215,10 @@ export const SchedulePage: React.FC = () => {
 
   const handleDateChange = (date: Date) => {
     const formattedDate = format(date, 'dd/MM/yyyy');
-    if (!disabledDays[formattedDate]) {
+    const isTuesday = getDay(date) === 2;
+    
+    // Don't allow selecting Tuesdays or manually disabled days
+    if (!disabledDays[formattedDate] && !isTuesday) {
       setSelectedDate(date);
       setSelectedTimeSlot(null);
     }
@@ -380,6 +401,7 @@ export const SchedulePage: React.FC = () => {
   );
 
   const availableTimeSlots = getAvailableTimeSlots();
+  const isSaturday = getDay(selectedDate) === 6;
 
   return (
     <div className="card-responsive max-w-4xl mx-auto">
@@ -445,6 +467,11 @@ export const SchedulePage: React.FC = () => {
               <p className="text-xs sm:text-sm text-gray-500">
                 * Horário de almoço: 12:00 - 13:00 (não disponível para agendamentos)
               </p>
+              {isSaturday && (
+                <p className="text-xs sm:text-sm text-purple-600 font-medium">
+                  * Sábado: agendamentos até às 18:00 (atendimento até às 19:00)
+                </p>
+              )}
               {showHourDurationWarning() && (
                 <p className="text-xs sm:text-sm text-gray-600">
                   * Este agendamento terá duração de 1 hora
