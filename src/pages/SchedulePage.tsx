@@ -395,7 +395,6 @@ export const SchedulePage: React.FC = () => {
                 >
                   <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                   Ver no Maps
-                </MapPin>
                 </Button>
               </div>
             </div>
