@@ -1,5 +1,5 @@
 import React from 'react';
-import { format, isSameDay, isAfter } from 'date-fns';
+import { format, isSameDay, isAfter, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { db } from '../lib/firebase';
 import { ref, get } from 'firebase/database';
@@ -52,7 +52,10 @@ export const TimeSlots: React.FC<TimeSlotsProps> = ({
     fetchCompletedSlots();
   }, [date]);
 
-  const timeSlotMap: { [key: string]: string } = {
+  const isSaturday = getDay(date) === 6;
+
+  // Different time slot maps for Saturday vs other days
+  const regularTimeSlotMap: { [key: string]: string } = {
     '1': '09:00',
     '2': '09:30',
     '3': '10:00',
@@ -76,6 +79,30 @@ export const TimeSlots: React.FC<TimeSlotsProps> = ({
     '20': '19:30',
     '21': '20:00',
   };
+
+  // Saturday: only allow booking until 18:00
+  const saturdayTimeSlotMap: { [key: string]: string } = {
+    '1': '09:00',
+    '2': '09:30',
+    '3': '10:00',
+    '4': '10:30',
+    '5': '11:00',
+    '6': '11:30',
+    // Skip 12:00 and 12:30 (lunch hour)
+    '7': '13:00',
+    '8': '13:30',
+    '9': '14:00',
+    '10': '14:30',
+    '11': '15:00',
+    '12': '15:30',
+    '13': '16:00',
+    '14': '16:30',
+    '15': '17:00',
+    '16': '17:30',
+    '17': '18:00', // Last slot on Saturday
+  };
+
+  const timeSlotMap = isSaturday ? saturdayTimeSlotMap : regularTimeSlotMap;
 
   const now = new Date();
   const isToday = isSameDay(date, now);
@@ -122,10 +149,15 @@ export const TimeSlots: React.FC<TimeSlotsProps> = ({
         ))}
       </div>
       
-      <div className="mt-2">
+      <div className="mt-2 space-y-1">
         <p className="text-sm text-gray-500">
           * Horário de almoço: 12:00 - 13:00 (não disponível para agendamentos)
         </p>
+        {isSaturday && (
+          <p className="text-sm text-purple-600 font-medium">
+            * Sábado: agendamentos até às 18:00 (atendimento até às 19:00)
+          </p>
+        )}
       </div>
     </div>
   );
