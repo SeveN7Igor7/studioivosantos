@@ -153,17 +153,18 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
   const handleDayClick = (day: Date) => {
     const isCurrentMonth = isSameMonth(day, currentMonth);
     const isTuesday = getDay(day) === 2;
+    const isSunday = getDay(day) === 0; // Sunday = 0
     
     if (isAdmin && isEditMode) {
-      // In edit mode, only allow toggling non-Tuesday days that are in current month
-      if (isCurrentMonth && !isTuesday) {
+      // In edit mode, only allow toggling non-Tuesday and non-Sunday days that are in current month
+      if (isCurrentMonth && !isTuesday && !isSunday) {
         toggleDateOff(day);
       }
     } else {
       // In view mode, handle normal date selection
       const isPastDay = isBefore(day, today) && !isAdmin;
       const isManuallyDisabled = disabledDays[format(day, 'dd-MM-yyyy')]?.blocked;
-      const isDisabled = isManuallyDisabled || isPastDay || isTuesday;
+      const isDisabled = isManuallyDisabled || isPastDay || isTuesday || isSunday;
       
       if (isCurrentMonth && !isDisabled) {
         onDateChange(day);
@@ -233,12 +234,13 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
             const isSelected = isSameDay(day, selectedDate);
             const isPastDay = isBefore(day, today);
             const isTuesday = getDay(day) === 2; // Tuesday = 2 (0=Sunday, 1=Monday, 2=Tuesday...)
+            const isSunday = getDay(day) === 0; // Sunday = 0
             const isManuallyDisabled = disabledDays[format(day, 'dd-MM-yyyy')]?.blocked;
-            const isDisabled = isManuallyDisabled || (isPastDay && !isAdmin) || isTuesday;
+            const isDisabled = isManuallyDisabled || (isPastDay && !isAdmin) || isTuesday || isSunday;
             const dayStats = dayAppointments[formattedDate] || { active: 0, completed: 0, cancelled: 0 };
 
             // Determine if the day should be clickable
-            const isClickableInEditMode = isAdmin && isEditMode && isCurrentMonth && !isTuesday;
+            const isClickableInEditMode = isAdmin && isEditMode && isCurrentMonth && !isTuesday && !isSunday;
             const isClickableInViewMode = !isEditMode && isCurrentMonth && !isDisabled;
             const isClickable = isClickableInEditMode || isClickableInViewMode;
 
@@ -251,8 +253,8 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
               bgColorClass = 'bg-[#E3A872]';
               dayColorClass = 'text-white';
             } else if (isCurrentMonth) {
-              if (isTuesday) {
-                // Style Tuesdays like manually disabled days (red)
+              if (isTuesday || isSunday) {
+                // Style Tuesdays and Sundays like manually disabled days (red)
                 bgColorClass = isEditMode ? 'bg-red-200' : 'bg-red-100';
                 dayColorClass = 'text-red-700';
               } else if (isManuallyDisabled) {
@@ -303,6 +305,8 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
                 title={
                   isTuesday 
                     ? 'Terça-feira - Dia não disponível para agendamentos' 
+                    : isSunday
+                      ? 'Domingo - Dia não disponível para agendamentos'
                     : isPastDay && !isAdmin
                       ? 'Data já passou - não disponível para agendamentos'
                     : isEditMode && isAdmin 
@@ -327,7 +331,7 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
                       </span>
                     </div>
                   )}
-                  {isEditMode && isAdmin && (isManuallyDisabled || isTuesday) && (
+                  {isEditMode && isAdmin && (isManuallyDisabled || isTuesday || isSunday) && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
                         <span className="text-white text-xs font-bold">✕</span>
@@ -350,7 +354,7 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
         {!isAdmin && (
           <div className="mt-2 space-y-1">
             <p className="text-xs sm:text-sm text-gray-500">
-              * Terças-feiras não estão disponíveis para agendamentos
+              * Domingos e terças-feiras não estão disponíveis para agendamentos
             </p>
             <p className="text-xs sm:text-sm text-gray-500">
               * Sábados: agendamentos até às 18:00 (atendimento até às 19:00)
@@ -367,7 +371,7 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
               * Números mostram: Agendados / Finalizados / Cancelados
             </p>
             <p className="text-xs sm:text-sm text-gray-500">
-              * Terças-feiras não estão disponíveis para agendamentos
+              * Domingos e terças-feiras não estão disponíveis para agendamentos
             </p>
             <p className="text-xs sm:text-sm text-gray-500">
               * Sábados: agendamentos até às 18:00 (atendimento até às 19:00)
