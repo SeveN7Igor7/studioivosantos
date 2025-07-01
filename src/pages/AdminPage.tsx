@@ -380,11 +380,17 @@ export const AdminPage: React.FC = () => {
     const [hours, minutes] = editForm.horario.split(':').map(Number);
     const appointmentDate = parse(editForm.dia, 'dd/MM/yyyy', new Date());
     const isTuesday = getDay(appointmentDate) === 2;
+    const isSunday = getDay(appointmentDate) === 0;
     const isSaturday = getDay(appointmentDate) === 6;
     
-    // Check if it's Tuesday
+    // Check if it's Tuesday or Sunday
     if (isTuesday) {
       alert('Não é possível agendar para terças-feiras');
+      return;
+    }
+
+    if (isSunday) {
+      alert('Não é possível agendar para domingos');
       return;
     }
 
@@ -509,6 +515,7 @@ export const AdminPage: React.FC = () => {
 
   const appointmentDate = parse(editForm.dia, 'dd/MM/yyyy', new Date());
   const isTuesday = getDay(appointmentDate) === 2;
+  const isSunday = getDay(appointmentDate) === 0;
   const isSaturday = getDay(appointmentDate) === 6;
 
   return (
@@ -622,10 +629,10 @@ export const AdminPage: React.FC = () => {
                 {isAdding ? 'Novo Agendamento' : 'Editar Agendamento'}
               </h3>
               
-              {isTuesday && (
+              {(isTuesday || isSunday) && (
                 <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
                   <p className="text-sm text-red-700 font-medium">
-                    ⚠️ Terças-feiras não estão disponíveis para agendamentos. Por favor, selecione outro dia.
+                    ⚠️ {isTuesday ? 'Terças-feiras' : 'Domingos'} não estão disponíveis para agendamentos. Por favor, selecione outro dia.
                   </p>
                 </div>
               )}
@@ -705,7 +712,7 @@ export const AdminPage: React.FC = () => {
                       onChange={handleTimeChange}
                       placeholder="HH:MM"
                       className="w-full sm:w-32"
-                      disabled={isTuesday}
+                      disabled={isTuesday || isSunday}
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       * Horário de almoço: 12:00 - 13:00 (não disponível)
@@ -733,7 +740,7 @@ export const AdminPage: React.FC = () => {
                 <Button
                   onClick={handleSave}
                   className="w-full sm:w-auto bg-[#E3A872] hover:bg-[#D89860]"
-                  disabled={selectedServices.length === 0 || isTuesday}
+                  disabled={selectedServices.length === 0 || isTuesday || isSunday}
                 >
                   <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                   Salvar
