@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { addDays, format, parse, addMinutes, isAfter, getDay } from 'date-fns';
+import { addDays, format, parse, addMinutes, isAfter, getDay, isBefore, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar } from '../components/Calendar/Calendar';
 import { TimeSlots } from '../components/TimeSlots';
@@ -28,8 +28,21 @@ const SERVICE_DURATIONS: ServiceDuration = {
   'visagismo': 30
 };
 
+// Function to find the next valid date for appointments
+const getNextValidDate = () => {
+  const today = startOfDay(new Date());
+  let nextDate = addDays(today, 1); // Start from tomorrow
+  
+  // Keep looking for a valid date (not Tuesday and not in the past)
+  while (getDay(nextDate) === 2) { // Skip Tuesdays
+    nextDate = addDays(nextDate, 1);
+  }
+  
+  return nextDate;
+};
+
 export const SchedulePage: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(getNextValidDate());
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [isBookingConfirmed, setIsBookingConfirmed] = useState(false);
@@ -198,7 +211,15 @@ export const SchedulePage: React.FC = () => {
         setExistingAppointments(appointments);
 
         if (diasDesativadosSnap.exists()) {
-          setDisabledDays(diasDesativadosSnap.val());
+          const disabledDaysData = diasDesativadosSnap.val();
+          setDisabledDays(disabledDaysData);
+          
+          // Check if the currently selected date is disabled
+          const currentSelectedDateStr = format(selectedDate, 'dd-MM-yyyy');
+          if (disabledDaysData[currentSelectedDateStr]?.blocked) {
+            // Find the next valid date
+            setSelectedDate(getNextValidDate());
+          }
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -216,9 +237,10 @@ export const SchedulePage: React.FC = () => {
   const handleDateChange = (date: Date) => {
     const formattedDate = format(date, 'dd/MM/yyyy');
     const isTuesday = getDay(date) === 2;
+    const isPastDate = isBefore(date, startOfDay(new Date()));
     
-    // Don't allow selecting Tuesdays or manually disabled days
-    if (!disabledDays[formattedDate] && !isTuesday) {
+    // Don't allow selecting Tuesdays, past dates, or manually disabled days
+    if (!disabledDays[format(date, 'dd-MM-yyyy')]?.blocked && !isTuesday && !isPastDate) {
       setSelectedDate(date);
       setSelectedTimeSlot(null);
     }
@@ -306,6 +328,8 @@ export const SchedulePage: React.FC = () => {
     setSelectedTimeSlot(null);
     setSelectedServices([]);
     setCurrentAppointmentId(null);
+    // Reset to next valid date
+    setSelectedDate(getNextValidDate());
   };
 
   if (isBookingConfirmed) {
@@ -371,6 +395,7 @@ export const SchedulePage: React.FC = () => {
                 >
                   <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                   Ver no Maps
+                </MapPin>
                 </Button>
               </div>
             </div>
