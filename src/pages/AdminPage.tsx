@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { format, parse, startOfMonth, endOfMonth, addDays, isSameDay, isWithinInterval } from 'date-fns';
+import { format, parse, startOfMonth, endOfMonth, addDays, isSameDay, isWithinInterval, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Clock, User, Scissors, Phone, Mail, Plus, Edit2, Check, X, Search, TrendingUp, CheckCircle2, Ban, DollarSign } from 'lucide-react';
 import { db } from '../lib/firebase';
@@ -95,6 +95,8 @@ export const AdminPage: React.FC = () => {
   const isTimeSlotConflicting = (timeSlot: string, duration: number, excludeId?: string) => {
     const startMinutes = timeToMinutes(timeSlot);
     const endMinutes = startMinutes + duration;
+    const appointmentDate = parse(editForm.dia, 'dd/MM/yyyy', new Date());
+    const isSaturday = getDay(appointmentDate) === 6;
     
     // Check against existing appointments for the selected date
     const dateAppointments = existingAppointments.filter(app => 
@@ -121,11 +123,20 @@ export const AdminPage: React.FC = () => {
       return true;
     }
 
-    // Check if appointment would end after 21:00 (absolute latest end time)
-    // This allows 1-hour appointments to start at 20:00 and end at 21:00
-    const absoluteEndTime = 21 * 60; // 21:00
-    if (endMinutes > absoluteEndTime) {
-      return true;
+    // Check Saturday-specific restrictions
+    if (isSaturday) {
+      // On Saturday, allow booking until 18:00 even if service ends at 19:00
+      // The barber works until 19:00, so 18:00 appointment with 1-hour service is fine
+      const saturdayWorkEndTime = 19 * 60; // 19:00 (when barber stops working)
+      if (endMinutes > saturdayWorkEndTime) {
+        return true;
+      }
+    } else {
+      // Check if appointment would end after 21:00 (absolute latest end time for other days)
+      const absoluteEndTime = 21 * 60; // 21:00
+      if (endMinutes > absoluteEndTime) {
+        return true;
+      }
     }
 
     return false;
@@ -367,16 +378,38 @@ export const AdminPage: React.FC = () => {
     }
 
     const [hours, minutes] = editForm.horario.split(':').map(Number);
-    if (hours < 8 || hours > 22 || (hours === 22 && minutes > 0)) {
-      alert('O horário deve estar entre 08:00 e 22:00');
+    const appointmentDate = parse(editForm.dia, 'dd/MM/yyyy', new Date());
+    const isTuesday = getDay(appointmentDate) === 2;
+    const isSaturday = getDay(appointmentDate) === 6;
+    
+    // Check if it's Tuesday
+    if (isTuesday) {
+      alert('Não é possível agendar para terças-feiras');
       return;
+    }
+
+    // Check time limits based on day
+    if (isSaturday) {
+      if (hours < 8 || hours > 18 || (hours === 18 && minutes > 0)) {
+        alert('Aos sábados, o horário deve estar entre 08:00 e 18:00');
+        return;
+      }
+    } else {
+      if (hours < 8 || hours > 22 || (hours === 22 && minutes > 0)) {
+        alert('O horário deve estar entre 08:00 e 22:00');
+        return;
+      }
     }
 
     const duration = getTotalDuration(selectedServices);
     
     // Check for conflicts with existing appointments
     if (isTimeSlotConflicting(editForm.horario, duration, isEditing || undefined)) {
-      alert('Este horário conflita com outro agendamento existente ou ultrapassa o horário de funcionamento');
+      if (isSaturday) {
+        alert('Este horário conflita com outro agendamento existente ou ultrapassa o horário de funcionamento de sábado (atendimento até 19:00)');
+      } else {
+        alert('Este horário conflita com outro agendamento existente ou ultrapassa o horário de funcionamento');
+      }
       return;
     }
 
@@ -473,6 +506,10 @@ export const AdminPage: React.FC = () => {
     ).length;
     return thirtyMinuteServicesCount > 1 || selectedServices.some(service => HOUR_LONG_SERVICES.includes(service));
   };
+
+  const appointmentDate = parse(editForm.dia, 'dd/MM/yyyy', new Date());
+  const isTuesday = getDay(appointmentDate) === 2;
+  const isSaturday = getDay(appointmentDate) === 6;
 
   return (
     <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
@@ -584,6 +621,15 @@ export const AdminPage: React.FC = () => {
               <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
                 {isAdding ? 'Novo Agendamento' : 'Editar Agendamento'}
               </h3>
+              
+              {isTuesday && (
+                <div className="mb-4 bg-purple-50 border border-purple-200 rounded-lg p-3">
+                  <p className="text-sm text-purple-700 font-medium">
+                    ⚠️ Terças-feiras não estão disponíveis para agendamentos. Por favor, selecione outro dia.
+                  </p>
+                </div>
+              )}
+              
               <div className="space-y-3 sm:space-y-4">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                   <Input
@@ -652,16 +698,20 @@ export const AdminPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                      Horário (08:00 - 22:00, exceto 12:00 - 13:00)
+                      Horário {isSaturday ? '(08:00 - 18:00, exceto 12:00 - 13:00)' : '(08:00 - 22:00, exceto 12:00 - 13:00)'}
                     </label>
                     <Input
                       value={editForm.horario}
                       onChange={handleTimeChange}
                       placeholder="HH:MM"
                       className="w-full sm:w-32"
+                      disabled={isTuesday}
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       * Horário de almoço: 12:00 - 13:00 (não disponível)
+                      {isSaturday && (
+                        <><br />* Sábado: agendamentos até às 18:00 (atendimento até às 19:00)</>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -683,7 +733,7 @@ export const AdminPage: React.FC = () => {
                 <Button
                   onClick={handleSave}
                   className="w-full sm:w-auto bg-[#E3A872] hover:bg-[#D89860]"
-                  disabled={selectedServices.length === 0}
+                  disabled={selectedServices.length === 0 || isTuesday}
                 >
                   <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                   Salvar
