@@ -623,8 +623,8 @@ export const AdminPage: React.FC = () => {
               </h3>
               
               {isTuesday && (
-                <div className="mb-4 bg-purple-50 border border-purple-200 rounded-lg p-3">
-                  <p className="text-sm text-purple-700 font-medium">
+                <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-700 font-medium">
                     ⚠️ Terças-feiras não estão disponíveis para agendamentos. Por favor, selecione outro dia.
                   </p>
                 </div>
