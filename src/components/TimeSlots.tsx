@@ -80,7 +80,7 @@ export const TimeSlots: React.FC<TimeSlotsProps> = ({
     '21': '20:00',
   };
 
-  // Saturday: only allow booking until 18:00
+  // Saturday: only allow booking until 17:00
   const saturdayTimeSlotMap: { [key: string]: string } = {
     '1': '09:00',
     '2': '09:30',
@@ -98,8 +98,7 @@ export const TimeSlots: React.FC<TimeSlotsProps> = ({
     '13': '16:00',
     '14': '16:30',
     '15': '17:00',
-    '16': '17:30',
-    '17': '18:00', // Last slot on Saturday
+    // Last slot on Saturday is now 17:00
   };
 
   const timeSlotMap = isSaturday ? saturdayTimeSlotMap : regularTimeSlotMap;
@@ -155,7 +154,7 @@ export const TimeSlots: React.FC<TimeSlotsProps> = ({
         </p>
         {isSaturday && (
           <p className="text-sm text-purple-600 font-medium">
-            * Sábado: agendamentos até às 18:00 (atendimento até às 19:00)
+            * Sábado: agendamentos até às 17:00 
           </p>
         )}
       </div>
