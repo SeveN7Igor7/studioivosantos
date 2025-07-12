@@ -357,7 +357,7 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
               * Domingos e terças-feiras não estão disponíveis para agendamentos
             </p>
             <p className="text-xs sm:text-sm text-gray-500">
-              * Sábados: agendamentos até às 18:00 (atendimento até às 19:00)
+              * Sábados: agendamentos até às 17:00
             </p>
             <p className="text-xs sm:text-sm text-red-600">
               * Dias em vermelho não estão disponíveis para agendamentos
@@ -374,7 +374,7 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
               * Domingos e terças-feiras não estão disponíveis para agendamentos
             </p>
             <p className="text-xs sm:text-sm text-gray-500">
-              * Sábados: agendamentos até às 18:00 (atendimento até às 19:00)
+              * Sábados: agendamentos até às 17:00 
             </p>
           </div>
         )}
