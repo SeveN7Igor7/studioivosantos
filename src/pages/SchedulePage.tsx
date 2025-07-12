@@ -89,8 +89,8 @@ export const SchedulePage: React.FC = () => {
     const currentTimeStr = format(now, 'HH:mm');
     const isSaturday = getDay(selectedDate) === 6; // Saturday = 6
     
-    // Set end time based on day of week - Saturday allows booking until 18:00
-    const endTimeStr = isSaturday ? '18:00' : '20:00';
+    // Set end time based on day of week - Saturday allows booking until 17:00
+    const endTimeStr = isSaturday ? '17:00' : '20:00';
     const endTime = parse(endTimeStr, 'HH:mm', new Date());
 
     while (currentTime <= endTime) {
@@ -155,9 +155,9 @@ export const SchedulePage: React.FC = () => {
 
     // Check Saturday-specific restrictions
     if (isSaturday) {
-      // On Saturday, allow booking until 18:00 even if service ends at 19:00
-      // The barber works until 19:00, so 18:00 appointment with 1-hour service is fine
-      const saturdayWorkEndTime = 19 * 60; // 19:00 (when barber stops working)
+      // On Saturday, allow booking until 17:00 even if service ends at 18:00
+      // The barber works until 18:00, so 17:00 appointment with 1-hour service is fine
+      const saturdayWorkEndTime = 18 * 60; // 18:00 (when barber stops working)
       if (endMinutes > saturdayWorkEndTime) {
         return true;
       }
@@ -494,7 +494,7 @@ export const SchedulePage: React.FC = () => {
               </p>
               {isSaturday && (
                 <p className="text-xs sm:text-sm text-purple-600 font-medium">
-                  * Sábado: agendamentos até às 18:00 (atendimento até às 19:00)
+                  * Sábado: agendamentos até às 17:00
                 </p>
               )}
               {showHourDurationWarning() && (
