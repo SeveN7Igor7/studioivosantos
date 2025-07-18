@@ -11,6 +11,7 @@ interface CalendarProps {
   onDateChange: (date: Date) => void;
   availableDates?: Date[];
   isAdmin?: boolean;
+  onMonthChange?: (month: Date) => void;
 }
 
 interface DayStats {
@@ -31,11 +32,16 @@ interface DisabledDays {
   [key: string]: DisabledDay;
 }
 
-export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAdmin = false }: CalendarProps) => {
+export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAdmin = false, onMonthChange }: CalendarProps) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [disabledDays, setDisabledDays] = useState<DisabledDays>({});
   const [isEditMode, setIsEditMode] = useState(false);
   const [dayAppointments, setDayAppointments] = useState<DayAppointments>({});
+
+  // Notify parent component when month changes initially
+  useEffect(() => {
+    onMonthChange?.(currentMonth);
+  }, [onMonthChange]);
 
   const toggleDateOff = async (date: Date) => {
     try {
@@ -135,8 +141,18 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
     };
   }, []);
 
-  const handlePreviousMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
-  const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+  const handlePreviousMonth = () => {
+    const newMonth = subMonths(currentMonth, 1);
+    setCurrentMonth(newMonth);
+    onMonthChange?.(newMonth);
+    onMonthChange?.(newMonth);
+  };
+  const handleNextMonth = () => {
+    const newMonth = addMonths(currentMonth, 1);
+    setCurrentMonth(newMonth);
+    onMonthChange?.(newMonth);
+    onMonthChange?.(newMonth);
+  };
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
@@ -357,7 +373,7 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
               * Domingos e terças-feiras não estão disponíveis para agendamentos
             </p>
             <p className="text-xs sm:text-sm text-gray-500">
-              * Sábados: agendamentos até às 17:00
+              * Sábados: agendamentos até às 18:00 (atendimento até às 19:00)
             </p>
             <p className="text-xs sm:text-sm text-red-600">
               * Dias em vermelho não estão disponíveis para agendamentos
@@ -374,7 +390,7 @@ export const Calendar = ({ selectedDate, onDateChange, availableDates = [], isAd
               * Domingos e terças-feiras não estão disponíveis para agendamentos
             </p>
             <p className="text-xs sm:text-sm text-gray-500">
-              * Sábados: agendamentos até às 17:00 
+              * Sábados: agendamentos até às 18:00 (atendimento até às 19:00)
             </p>
           </div>
         )}
