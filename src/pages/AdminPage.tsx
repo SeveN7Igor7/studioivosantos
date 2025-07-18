@@ -53,6 +53,7 @@ export const AdminPage: React.FC = () => {
   const [monthlyProfit, setMonthlyProfit] = useState(0);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [existingAppointments, setExistingAppointments] = useState<any[]>([]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [editForm, setEditForm] = useState<Appointment>({
     dia: format(new Date(), 'dd/MM/yyyy'),
     horario: '',
@@ -148,7 +149,7 @@ export const AdminPage: React.FC = () => {
     const cancelledRef = ref(db, 'cancelados');
     const diasDesativadosRef = ref(db, 'diasdesativados');
     
-    const fetchData = async () => {
+    const fetchAndCalculateStats = async () => {
       try {
         const [appointmentsSnap, completedSnap, cancelledSnap, diasDesativadosSnap] = await Promise.all([
           get(appointmentsRef),
@@ -207,7 +208,7 @@ export const AdminPage: React.FC = () => {
         setAppointments(allAppointments);
         setExistingAppointments(existingApps);
 
-        // Calculate daily profit
+        // Calculate daily profit for selected date
         const selectedDateStr = format(selectedDate, 'dd/MM/yyyy');
         const completedToday = allAppointments.filter(
           app => app.status === 'completed' && app.dia === selectedDateStr
@@ -231,16 +232,22 @@ export const AdminPage: React.FC = () => {
 
         setDailyProfit(dailyProfit);
 
-        // Calculate monthly profit
-        const now = new Date();
-        const monthStart = startOfMonth(now);
-        const monthEnd = endOfMonth(now);
+        // Calculate monthly stats and profit for the current month being viewed
+        const monthStart = startOfMonth(currentMonth);
+        const monthEnd = endOfMonth(currentMonth);
 
-        const completedThisMonth = allAppointments.filter(app => {
+        // Filter all appointments for the current month being viewed
+        const appointmentsThisMonth = allAppointments.filter(app => {
           const appDate = parse(app.dia, 'dd/MM/yyyy', new Date());
-          return app.status === 'completed' && isWithinInterval(appDate, { start: monthStart, end: monthEnd });
+          return isWithinInterval(appDate, { start: monthStart, end: monthEnd });
         });
 
+        // Separate by status for the current month
+        const completedThisMonth = appointmentsThisMonth.filter(app => app.status === 'completed');
+        const cancelledThisMonth = appointmentsThisMonth.filter(app => app.status === 'cancelled');
+        const activeThisMonth = appointmentsThisMonth.filter(app => app.status === 'active');
+
+        // Calculate monthly profit from completed appointments
         const monthlyProfit = completedThisMonth.reduce((total, app) => {
           const services = app.servico.split(', ');
           const serviceTotal = services.reduce((acc, service) => {
@@ -257,14 +264,12 @@ export const AdminPage: React.FC = () => {
         }, 0);
 
         setMonthlyProfit(monthlyProfit);
-        
-        const completedCount = completedSnap.exists() ? Object.keys(completedSnap.val()).length : 0;
-        const cancelledCount = cancelledSnap.exists() ? Object.keys(cancelledSnap.val()).length : 0;
-        
+
+        // Update monthly stats based on the current month being viewed
         setMonthlyStats({
-          total: allAppointments.length,
-          completed: completedCount,
-          cancelled: cancelledCount
+          total: appointmentsThisMonth.length,
+          completed: completedThisMonth.length,
+          cancelled: cancelledThisMonth.length
         });
 
         if (diasDesativadosSnap.exists()) {
@@ -278,11 +283,21 @@ export const AdminPage: React.FC = () => {
       }
     };
 
-    fetchData();
+    fetchAndCalculateStats();
 
-    const unsubscribe = onValue(appointmentsRef, fetchData);
-    return () => unsubscribe();
-  }, [selectedDate]);
+    // Set up real-time listeners for all data sources
+    const unsubscribeAppointments = onValue(appointmentsRef, fetchAndCalculateStats);
+    const unsubscribeCompleted = onValue(completedRef, fetchAndCalculateStats);
+    const unsubscribeCancelled = onValue(cancelledRef, fetchAndCalculateStats);
+    const unsubscribeDisabled = onValue(diasDesativadosRef, fetchAndCalculateStats);
+    
+    return () => {
+      unsubscribeAppointments();
+      unsubscribeCompleted();
+      unsubscribeCancelled();
+      unsubscribeDisabled();
+    };
+  }, [selectedDate, currentMonth]);
 
   const handleComplete = async (appointment: Appointment) => {
     if (window.confirm('Confirmar que este agendamento foi finalizado?')) {
@@ -618,6 +633,7 @@ export const AdminPage: React.FC = () => {
                 selectedDate={selectedDate}
                 onDateChange={handleDateChange}
                 availableDates={availableDates}
+                onMonthChange={setCurrentMonth}
                 isAdmin
               />
             </div>
