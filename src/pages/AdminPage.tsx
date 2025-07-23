@@ -126,9 +126,9 @@ export const AdminPage: React.FC = () => {
 
     // Check Saturday-specific restrictions
     if (isSaturday) {
-      // On Saturday, allow booking until 18:00 even if service ends at 19:00
-      // The barber works until 19:00, so 18:00 appointment with 1-hour service is fine
-      const saturdayWorkEndTime = 19 * 60; // 19:00 (when barber stops working)
+      // On Saturday, allow booking until 17:00 even if service ends at 18:00
+      // The barber works until 18:00, so 17:00 appointment with 1-hour service is fine
+      const saturdayWorkEndTime = 18 * 60; // 18:00 (when barber stops working)
       if (endMinutes > saturdayWorkEndTime) {
         return true;
       }
@@ -411,8 +411,8 @@ export const AdminPage: React.FC = () => {
 
     // Check time limits based on day
     if (isSaturday) {
-      if (hours < 8 || hours > 18 || (hours === 18 && minutes > 0)) {
-        alert('Aos sábados, o horário deve estar entre 08:00 e 18:00');
+      if (hours < 8 || hours > 17 || (hours === 17 && minutes > 0)) {
+        alert('Aos sábados, o horário deve estar entre 08:00 e 17:00');
         return;
       }
     } else {
@@ -427,7 +427,7 @@ export const AdminPage: React.FC = () => {
     // Check for conflicts with existing appointments
     if (isTimeSlotConflicting(editForm.horario, duration, isEditing || undefined)) {
       if (isSaturday) {
-        alert('Este horário conflita com outro agendamento existente ou ultrapassa o horário de funcionamento de sábado (atendimento até 19:00)');
+        alert('Este horário conflita com outro agendamento existente ou ultrapassa o horário de funcionamento de sábado (atendimento até 18:00)');
       } else {
         alert('Este horário conflita com outro agendamento existente ou ultrapassa o horário de funcionamento');
       }
@@ -534,7 +534,7 @@ export const AdminPage: React.FC = () => {
   const isSaturday = getDay(appointmentDate) === 6;
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
+    <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 relative z-10">
       <div className="bg-white shadow-lg rounded-lg overflow-hidden">
         <div className="p-3 sm:p-4 lg:p-6 bg-gradient-to-r from-[#E3A872] to-[#D89860]">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-3 lg:space-y-0">
@@ -721,7 +721,7 @@ export const AdminPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                      Horário {isSaturday ? '(08:00 - 18:00, exceto 12:00 - 13:00)' : '(08:00 - 19:00, exceto 12:00 - 13:00)'}
+                      Horário {isSaturday ? '(08:00 - 17:00, exceto 12:00 - 13:00)' : '(08:00 - 19:00, exceto 12:00 - 13:00)'}
                     </label>
                     <Input
                       value={editForm.horario}
@@ -733,7 +733,7 @@ export const AdminPage: React.FC = () => {
                     <p className="text-xs text-gray-500 mt-1">
                       * Horário de almoço: 12:00 - 13:00 (não disponível)
                       {isSaturday && (
-                        <><br />* Sábado: agendamentos até às 18:00 (atendimento até às 19:00)</>
+                        <><br />* Sábado: agendamentos até às 17:00 (atendimento até às 18:00)</>
                       )}
                     </p>
                   </div>
