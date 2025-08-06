@@ -502,6 +502,32 @@
     }
   }
 
+  /* Admin page specific mobile background fix */
+  .admin-bg-mobile {
+    background-attachment: scroll;
+  }
+  
+  @media (max-width: 640px) {
+    .admin-bg-mobile {
+      background-size: contain;
+      background-position: center top;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .admin-bg-mobile {
+      background-size: contain;
+      background-position: center top;
+    }
+  }
+  
+  @media (max-width: 360px) {
+    .admin-bg-mobile {
+      background-size: contain;
+      background-position: center top;
+    }
+  }
+
   /* Responsive image utilities */
   .img-responsive {
     width: 100%;
@@ -511,13 +537,56 @@
   
   .bg-responsive {
     background-size: cover;
-    background-position: center;
+    background-position: center 10%;
     background-repeat: no-repeat;
   }
   
   @media (max-width: 639px) {
     .bg-responsive {
+      background-position: center 15%;
+      background-size: cover;
+    }
+  }
+  
+  /* Desktop and larger screens - reduce zoom effect */
+  @media (min-width: 1024px) {
+    .img-responsive {
+      max-height: 80vh;
+    }
+    
+    .bg-responsive {
+      background-position: center 25%;
+      background-size: contain;
+    }
+  }
+  
+  @media (min-width: 1280px) {
+    .bg-responsive {
+      background-position: center 30%;
+      background-size: contain;
+    }
+  }
+  
+  /* Extra large screens - further reduce zoom */
+  @media (min-width: 1536px) {
+    .bg-responsive {
+      background-position: center 35%;
+      background-size: contain;
+    }
+  }
+  
+  /* Mobile-specific background adjustments */
+  @media (max-width: 480px) {
+    .bg-responsive {
+      background-size: cover;
       background-position: center 20%;
+    }
+  }
+  
+  @media (max-width: 360px) {
+    .bg-responsive {
+      background-size: cover;
+      background-position: center 25%;
     }
   }
 }
