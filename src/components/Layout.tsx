@@ -111,13 +111,16 @@ export const Layout = () => {
       </header>
 
       <main className="flex-grow relative">
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 admin-bg-mobile">
           <img
             src="/images/WhatsApp Image 2025-05-12 at 14.01.53.jpeg"
             alt="Background"
-            className="img-responsive bg-responsive h-full object-cover object-[center_15%] sm:object-center"
+            className="w-full h-full object-cover"
+            style={{
+              objectPosition: 'center 10%'
+            }}
           />
-          <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px]"></div>
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]"></div>
         </div>
         <div className="relative z-10 container-responsive py-4 sm:py-6 md:py-8">
           <Outlet />
