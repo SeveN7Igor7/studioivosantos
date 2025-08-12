@@ -1,8 +1,5 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
 import { Scissors, ScissorsLineDashed, Sparkles, Brush, SprayCan as Spray, Droplet, UserCheck } from 'lucide-react';
-import { db } from '../lib/firebase';
-import { ref, onValue } from 'firebase/database';
 
 interface Service {
   id: string;
@@ -23,83 +20,82 @@ interface ServiceSelectionProps {
   onSelectService: (serviceId: string) => void;
 }
 
-// Default icon mapping for services
-const getServiceIcon = (serviceId: string) => {
-  const iconMap: { [key: string]: React.ReactNode } = {
-    'haircut': <Scissors className="h-5 w-5 sm:h-6 sm:w-6" />,
-    'beard': <ScissorsLineDashed className="h-5 w-5 sm:h-6 sm:w-6" />,
-    'eyebrows': <Brush className="h-5 w-5 sm:h-6 sm:w-6" />,
-    'carbonoplastia': <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />,
-    'pigmentation': <Spray className="h-5 w-5 sm:h-6 sm:w-6" />,
-    'facial-cleaning': <Droplet className="h-5 w-5 sm:h-6 sm:w-6" />,
-    'taninoplastia': <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />,
-    'visagismo': <UserCheck className="h-5 w-5 sm:h-6 sm:w-6" />,
-  };
-  
-  return iconMap[serviceId] || <Scissors className="h-5 w-5 sm:h-6 sm:w-6" />;
-};
 export const ServiceSelection: React.FC<ServiceSelectionProps> = ({
   selectedServices,
   onSelectService,
 }) => {
-  const [services, setServices] = useState<Service[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const servicesRef = ref(db, 'services');
-    
-    const unsubscribe = onValue(servicesRef, (snapshot) => {
-      try {
-        if (snapshot.exists()) {
-          const servicesData = snapshot.val();
-          const servicesList: Service[] = Object.entries(servicesData).map(([id, service]: [string, any]) => ({
-            id,
-            name: service.name,
-            description: service.description || '',
-            duration: service.duration ? `${service.duration} min` : undefined,
-            price: service.price,
-            sizes: service.sizes,
-            icon: getServiceIcon(id)
-          }));
-          setServices(servicesList);
-        } else {
-          // If no services exist, set empty array
-          setServices([]);
-        }
-      } catch (error) {
-        console.error('Error loading services:', error);
-        setServices([]);
-      } finally {
-        setIsLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="mt-4 sm:mt-6">
-        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Selecione os Serviços</h3>
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#E3A872]"></div>
-          <span className="ml-2 text-sm text-gray-500">Carregando serviços...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (services.length === 0) {
-    return (
-      <div className="mt-4 sm:mt-6">
-        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Selecione os Serviços</h3>
-        <div className="text-center py-8">
-          <p className="text-sm text-gray-500">Nenhum serviço disponível no momento.</p>
-          <p className="text-xs text-gray-400 mt-1">Entre em contato com o administrador.</p>
-        </div>
-      </div>
-    );
-  }
+  const services: Service[] = [
+    {
+      id: 'haircut',
+      name: 'Corte de Cabelo',
+      description: 'Corte profissional com lavagem e finalização',
+      duration: '30 min',
+      price: 40,
+      icon: <Scissors className="h-5 w-5 sm:h-6 sm:w-6" />,
+    },
+    {
+      id: 'beard',
+      name: 'Barba',
+      description: 'Modelagem e acabamento da barba',
+      duration: '30 min',
+      price: 40,
+      icon: <ScissorsLineDashed className="h-5 w-5 sm:h-6 sm:w-6" />,
+    },
+    {
+      id: 'eyebrows',
+      name: 'Sobrancelha',
+      description: 'Design e acabamento das sobrancelhas',
+      duration: '15 min',
+      price: 15,
+      icon: <Brush className="h-5 w-5 sm:h-6 sm:w-6" />,
+    },
+    {
+      id: 'carbonoplastia',
+      name: 'Carbonoplastia',
+      description: 'Tratamento capilar com carbono ativado',
+      duration: '1h 30min',
+      sizes: {
+        p: 120,
+        m: 140,
+        g: 160,
+      },
+      icon: <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />,
+    },
+    {
+      id: 'pigmentation',
+      name: 'Pigmentação',
+      description: 'Pigmentação capilar profissional',
+      duration: '1h',
+      price: 50,
+      icon: <Spray className="h-5 w-5 sm:h-6 sm:w-6" />,
+    },
+    {
+      id: 'facial-cleaning',
+      name: 'Limpeza Facial',
+      description: 'Limpeza e tratamento facial completo',
+      duration: '45 min',
+      price: 50,
+      icon: <Droplet className="h-5 w-5 sm:h-6 sm:w-6" />,
+    },
+    {
+      id: 'taninoplastia',
+      name: 'Taninoplastia',
+      description: 'Tratamento capilar com tanino',
+      duration: '1h 30min',
+      sizes: {
+        p: 120,
+        m: 140,
+        g: 160,
+      },
+      icon: <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />,
+    },
+    {
+      id: 'visagismo',
+      name: 'Visagismo',
+      description: 'Para consultoria visagista entre contato',
+      icon: <UserCheck className="h-5 w-5 sm:h-6 sm:w-6" />,
+    },
+  ];
 
   return (
     <div className="mt-4 sm:mt-6">
